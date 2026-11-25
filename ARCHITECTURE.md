@@ -1,0 +1,184 @@
+# Architecture — Marmotte.ChatUi
+
+English | [Français](ARCHITECTURE.fr.md)
+
+## Status and purpose
+
+This document records the target architecture and planning decisions. At this stage, the repository contains documentation and visual assets; the application and packages have not yet been implemented or published.
+
+Marmotte.ChatUi serves two purposes: a .NET and Blazor chat application inspired by AnythingLLM and Open WebUI, and a library of components and widgets that can be embedded in other applications. The complete application will use the same components distributed through NuGet.
+
+## Scope and milestones
+
+### First version
+
+- Chat UI, conversations, messages, and streamed responses when supported by the server.
+- Connection settings for OpenAI-compatible APIs: [LM Studio](https://lmstudio.ai/docs/app), [Unsloth Desktop](https://www.unsloth.ai/), and custom endpoints.
+- Conversation history and preferences specific to each user.
+- OIDC authentication for the complete application through Keycloak.
+- Local orchestration with .NET Aspire, Keycloak, and PostgreSQL with pgvector.
+- Reusable Blazor components intended for a NuGet package.
+- A customizable design system with light, dark, and system modes.
+- Attachment uploads through file selection and drag and drop; images sent to models that support vision.
+
+### Next stage
+
+PDF processing, particularly for scanned documents, is planned but may follow the first version. It will prepare page images, with page selection and resolution limits, before sending them to a vision model. A file type with no available processing must not be presented as usable by the model.
+
+RAG, document indexing, and embedding generation are outside the first version. Having pgvector available prepares for those possible additions without implementing them. PostgreSQL is the only persistence provider selected for now; RavenDB is outside this scope.
+
+## Architectural principles
+
+Use a hexagonal architecture with a DDD-inspired domain. Use cases depend on internal ports; external technologies are adapters. The domain and application contracts do not depend on infrastructure tools or presentation components.
+
+Important boundaries correspond to separate assemblies. The initial design is a modular application, without a requirement to deploy each assembly as a service.
+
+### Target structure
+
+The names below are a proposed structure to establish when creating the solution.
+
+| Project / assembly | Responsibility | Main internal dependencies |
+| --- | --- | --- |
+| Marmotte.ChatUi.Domain | Conversations, messages, attachments, and business invariants | No infrastructure |
+| Marmotte.ChatUi.Contracts | Presentation contracts and data exchanges required by the distributed components | No infrastructure |
+| Marmotte.ChatUi.Application | Use cases, authorization, and ports for storage, identity, and generation | Domain, Contracts |
+| Marmotte.ChatUi.Components | Razor Class Library, widgets, styles, and tokens; public NuGet package | Contracts |
+| Marmotte.ChatUi.Infrastructure.OpenAI | Adapter for OpenAI-compatible servers | Application, Domain |
+| Marmotte.ChatUi.Persistence.PostgreSql | Concrete repositories, mappings, migrations, and pgvector integration | Application, Domain |
+| Marmotte.ChatUi.Web | Blazor application, OIDC sign-in, and composition of implementations | Components, Application, and adapters |
+| Marmotte.ChatUi.AppHost | Definition and startup of Aspire resources | References to hosted projects |
+| Marmotte.ChatUi.ServiceDefaults | Shared technical configuration for hosting and observability | No business rules |
+
+Document processing may be placed in an Infrastructure.Documents assembly when implemented. The exact assembly structure for binary storage will be chosen at that stage, behind a dedicated port.
+
+```mermaid
+flowchart LR
+    Web[Blazor application] --> UI[NuGet components]
+    UI --> Contracts[Presentation contracts]
+    Web --> App[Use cases and ports]
+    App --> Domain[Domain]
+    App --> Contracts
+    Pg[PostgreSQL adapter] --> App
+    AI[OpenAI adapter] --> App
+    Docs[Future document adapter] --> App
+    Web --> Pg
+    Web --> AI
+```
+
+Arrows represent code dependencies. At runtime, use cases call adapters through injected interfaces.
+
+## Domain model and contracts
+
+The initial vocabulary includes Conversation, Message, Attachment, ConnectionProfile, and UserPreferences. Names and aggregate boundaries will be refined from the use cases; they do not yet constitute a database schema.
+
+A conversation belongs to a user. Its messages retain their role, content, order, and metadata needed to resume the conversation history. Attachments are referenced by identifier and metadata instead of always loading their contents into memory whenever history is read.
+
+Application ports cover concrete needs: loading and saving conversations, preferences, and profiles; generating responses; model capabilities; current identity; attachment storage; and multimodal content preparation.
+
+Repositories expose focused, paginated business operations. They do not expose IQueryable, DbContext, NpgsqlConnection, or pgvector-specific types. Persistence operations must define consistency between a message and its attachment references.
+
+## Blazor components and NuGet distribution
+
+The library is a Razor Class Library intended for publication on NuGet. It provides a message list, message composer, attachments, generation states, and a composable chat widget.
+
+Its API relies on stable parameters, events, templates, and presentation contracts. The consuming application supplies the conversation and attachment services it needs. The components do not require the complete application and do not mandate a database, identity provider, or model SDK.
+
+Reusable assets and styles must ship with the library where needed. The widget host can replace the Marmotte.ChatUi application's branding. A sample project or consumption test will verify that the package works without transitive dependencies on server adapters.
+
+NuGet publication is a later delivery milestone. No reserved package name, published version, or publication pipeline is assumed to exist.
+
+## Host application and identity
+
+The complete application is a Blazor application hosted in ASP.NET Core. Server interactivity is the proposed starting point: model calls, secrets, and persistence remain on the server. The rendering mode will be confirmed when creating the solution; public components must not implicitly depend on a server-side Blazor circuit.
+
+Keycloak is the OIDC identity provider. Aspire starts its container as a separate resource, with reproducible realm, client, and redirect configuration. The application's OIDC client and the authority's public addresses must be consistent with what the browser can actually reach.
+
+Authentication establishes identity; use cases then control access to each conversation, preference, and attachment. Persisted identity relies on a stable identifier associated with the OIDC issuer/subject pair, not an email address. An owner identifier supplied by the browser does not constitute authorization.
+
+The local Keycloak configuration is not a production configuration. The hosting target and operational settings still need to be defined before a production deployment.
+
+## Model connections
+
+Settings cover the profile name, base URL, model, relevant options, and authentication when required by the server. Provide a connection test and model discovery where supported, with manual entry available.
+
+The [OpenAI NuGet package](https://www.nuget.org/packages/OpenAI) is the preferred candidate requested for the adapter. The [official .NET SDK documents custom endpoints](https://github.com/openai/openai-dotnet#using-a-custom-base-url-and-api-key). Adoption will be confirmed by testing actual requirements against LM Studio and Unsloth Desktop; no version has been pinned or installed yet.
+
+The SDK stays confined to Infrastructure.OpenAI. Its messages, results, and exceptions are translated into internal contracts. Verify chat, streaming, cancellation, model discovery, vision, and optional authentication separately. OpenAI compatibility alone does not imply the availability of the Responses or Files API.
+
+Prefer the conversation subset actually shared by the target servers. An SDK credential requirement must not force users to invent a key in the settings when their local server does not require one; the technical approach will be verified and encapsulated in the adapter.
+
+A profile belongs to its user and does not implicitly share its secrets with others. Model credentials are separate from OIDC sign-in to the application.
+
+Account for the execution topology: localhost refers to the machine or container running the adapter, not necessarily the browser's computer. Document and test access to local servers from the chosen Aspire configuration.
+
+## PostgreSQL persistence and pgvector
+
+The Persistence.PostgreSql assembly contains all relational details: repository implementations, mappings, indexes, migrations, transactions, and provider-specific types. The choice between an ORM and direct SQL access remains open at this stage.
+
+PostgreSQL stores conversations, messages, profiles, preferences, and attachment metadata. Binary storage has a separate port to avoid coupling the domain to a database or file system. The initial adapter and its retention policy will be defined when implementing uploads.
+
+pgvector is an extension: it must be available in the PostgreSQL installation, then enabled in each database that uses it. The AppHost will use a PostgreSQL image that includes pgvector, with compatible versions and an explicit tag chosen during implementation. Activation will be reproducible:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+This command enables an already installed extension; it does not install its files on the server. Installation and activation are described in the [official pgvector documentation](https://github.com/pgvector/pgvector#installation).
+
+Activation and migrations must be verified with both a new volume and an existing database. Persist data across restarts. A container's first-time initialization scripts do not replace migrations for an existing database.
+
+Embedding dimensions, models, vector indexes, and search rules will be decided alongside a feature that uses them. The initial chat does not require speculative embeddings or a search schema.
+
+## Aspire orchestration
+
+The AppHost describes the web application, Keycloak, and PostgreSQL with pgvector, including their dependencies, settings, and readiness checks. Hosting configuration composes the services without leaking into the domain or the component NuGet package.
+
+Provide reproducible initialization, migrations, persistent volumes, and connection information injected into consumers. Keycloak storage is separate from business tables, even if a single PostgreSQL server hosts separate databases.
+
+The Aspire documentation describes the [PostgreSQL](https://aspire.dev/integrations/databases/postgres/postgres-get-started/) and [Keycloak](https://aspire.dev/integrations/security/keycloak/) integrations. Orchestrated local startup is part of the first version. A production deployment target has not yet been selected.
+
+## Attachments, vision, and PDFs
+
+### Uploads and images
+
+File selection and drag and drop use the same upload flow. Show the name, format, size, preview where relevant, progress, removal before sending, and understandable errors. Provide configurable limits per file and per message.
+
+The application checks the actual format, size, dimensions, and access rights on the server. The provider contract exposes the necessary capabilities: a text-only model must not receive images that are silently ignored. Accepted formats and limits will be validated for each model and server; [LM Studio documents image input for vision models](https://lmstudio.ai/docs/typescript/llm-prediction/image-input).
+
+Original attachments and prepared representations are distinct. References and metadata establish ownership, lifecycle, and traceability of the content actually sent.
+
+### PDF preparation — later stage
+
+The intended pipeline is: PDF validation, page inspection, selection of useful pages, rendering to images, suitable resizing and encoding, preview, then sending the selected pages to the vision model.
+
+Rendering will be encapsulated behind a document preparation port. Set limits for pages, dimensions, total pixels, memory, time, and concurrency; process progressively instead of loading all pages into memory. Preserve page order and numbers. Handle invalid or protected files and cancellation explicitly.
+
+For scanned PDFs, rendering to images is the main approach under consideration. For PDFs that already contain usable text, text extraction can be evaluated to avoid unnecessary conversion while retaining vision for layout, tables, or illustrations.
+
+A PDF's size on disk does not measure its context consumption. Reducing JPEG size helps with transfer but does not guarantee a proportional reduction in visual tokens. Cost depends on the model, its preprocessing, dimensions, and the number of pages/images. Bound the content sent while preserving readability, and verify results with the target models.
+
+The PDF rendering library, its license, and storage for rendered pages will be selected before this stage. No additional engine, OCR service, or queueing system is required by the current design.
+
+## Design system and visual identity
+
+The design system exposes semantic tokens through CSS custom properties: surfaces, text, accents, borders, states, focus, spacing, typography, radii, and shadows. Components use these tokens instead of individually hardcoded colors.
+
+Provide light, dark, and system themes, with an explicit user preference. The consuming application must be able to override tokens globally or within a widget container, without modifying the package or imposing intrusive global styles. Check contrast, keyboard interaction, focus, and readability in every theme.
+
+The brand reuses the turquoise mascot with a cream muzzle and red scarf supplied by the user. A Marmotte.ChatUi banner is used in the README, and a compact version is intended for the application. Widget consumers can customize its branding. MarmotteDB and Experimental Proof of Concept belong to the original references and are not the product name.
+
+Reference images and their provenance are preserved in [docs/images/README.md](docs/images/README.md). Assets must work on light and dark backgrounds and preserve transparency where present.
+
+## Verification during implementation
+
+- Verify assembly independence and NuGet consumption in a minimal application.
+- Test invariants, isolation between users, and repository operations.
+- Verify migrations and pgvector activation on new and existing databases.
+- Test OIDC sign-in and access to protected resources.
+- Validate chat, streaming, cancellation, and images against the servers and models actually selected.
+- Check themes, overridden tokens, keyboard interaction, and upload states.
+- Once the PDF pipeline exists, check scanned documents, limits, cancellation, readability, and resource consumption.
+
+## Decisions to finalize
+
+.NET/Aspire and dependency versions, the final Blazor rendering mode, data access, binary storage, the PDF rendering engine, and the production target will be specified during their respective implementation stages. These open points do not change the dependency boundaries, PostgreSQL, pgvector, OIDC/Keycloak, or NuGet distribution of the components.
