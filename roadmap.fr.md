@@ -8,7 +8,7 @@ Cette feuille de route décline les décisions de [l’architecture](ARCHITECTUR
 
 ## Point de départ
 
-Les README, documents d’architecture, consignes bilingues et ressources de la mascotte existent déjà. L’application, l’infrastructure exécutable et les packages ne sont pas encore implémentés ou publiés. Les 82 tâches ci-dessous restent donc à réaliser.
+M1 est terminé : le socle de la solution, l’hôte Blazor/Aspire minimal, les premiers tests et la configuration CI sont implémentés. Sur les 82 tâches ci-dessous, 6 sont terminées et 76 restent ouvertes. Les fonctions de chat, les intégrations externes et la publication NuGet restent prévues.
 
 ## Périmètre et suivi
 
@@ -43,14 +43,16 @@ Les README, documents d’architecture, consignes bilingues et ressources de la 
 
 **Dépendances:** Aucune.
 
-- [ ] **1.1** — Choisir des versions compatibles de .NET, Aspire et des dépendances ; documenter les prérequis et fixer les versions du SDK et des packages.
-- [ ] **1.2** — Confirmer le mode de rendu Blazor de l’application hôte, à partir de la proposition d’interactivité serveur, et définir les modes pris en charge par les composants réutilisables.
-- [ ] **1.3** — Créer Domain, Contracts, Application, Components, Infrastructure.OpenAI, Persistence.PostgreSql, Web, AppHost et ServiceDefaults avec le sens de dépendance prévu.
-- [ ] **1.4** — Configurer la nullabilité, le formatage, les analyseurs et la gestion des dépendances ; documenter les conventions C# et Razor.
-- [ ] **1.5** — Créer les projets de tests et un workflow CI pour la restauration, la compilation et les vérifications pertinentes, sans serveur de modèles personnel ni identifiant payant.
-- [ ] **1.6** — Documenter en anglais et en français les commandes de compilation et de test vérifiées, ainsi que la configuration des secrets de développement.
+- [x] **1.1** — Choisir des versions compatibles de .NET, Aspire et des dépendances ; documenter les prérequis et fixer les versions du SDK et des packages.
+- [x] **1.2** — Confirmer le mode de rendu Blazor de l’application hôte, à partir de la proposition d’interactivité serveur, et définir les modes pris en charge par les composants réutilisables.
+- [x] **1.3** — Créer Domain, Contracts, Application, Components, Infrastructure.OpenAI, Persistence.PostgreSql, Web, AppHost et ServiceDefaults avec le sens de dépendance prévu.
+- [x] **1.4** — Configurer la nullabilité, le formatage, les analyseurs et la gestion des dépendances ; documenter les conventions C# et Razor.
+- [x] **1.5** — Créer les projets de tests et un workflow CI pour la restauration, la compilation et les vérifications pertinentes, sans serveur de modèles personnel ni identifiant payant.
+- [x] **1.6** — Documenter en anglais et en français les commandes de compilation et de test vérifiées, ainsi que la configuration des secrets de développement.
 
 **Critère de validation:** Un clone neuf compile et passe les premières vérifications ; les références entre projets respectent l’architecture et la bibliothèque de composants ne dépend pas des adaptateurs serveur.
+
+**Validation (2026-11-25) :** Sur macOS ARM64 avec le SDK 10.0.401, la restauration verrouillée, la compilation Release (sans avertissement ni erreur), le formatage et les 18 tests passent depuis une copie des sources sans résultats de compilation préexistants. Le démarrage web direct et le démarrage Aspire limité au web ont servi la page du socle puis se sont arrêtés correctement. Les commandes d’ajout/suppression de secrets de développement ont été vérifiées avec une valeur factice. Les paires de documents anglais/français et les liens locaux ont été contrôlés. La CI est configurée pour Ubuntu ; aucune exécution GitHub Actions ni validation multiplateforme à l’exécution n’est revendiquée. Consulter les guides de [développement](docs/development.fr.md), d’[exploitation](docs/operations.fr.md) et d’[intégration](docs/integration.fr.md).
 
 <a id="milestone-2"></a>
 

@@ -16,7 +16,7 @@ Les fichiers locaux ci-dessous sont des copies non modifiées des images jointes
 Deux déclinaisons ont été produites avec l’outil imagegen intégré à partir des références :
 
 - [Bannière Marmotte.ChatUi](marmotte-chatui-banner.png), utilisée dans le README : 1774 × 887 pixels, PNG avec transparence.
-- [Mascotte compacte](marmotte-chatui-mascot.png), prête pour la future application : 1254 × 1254 pixels, PNG avec transparence.
+- [Mascotte compacte](marmotte-chatui-mascot.png), utilisée par l’hôte web M1 : 1254 × 1254 pixels, PNG avec transparence. Une copie de déploiement inchangée se trouve dans `src/Marmotte.ChatUi.Web/wwwroot/images/` ; la maintenir synchronisée avec cette source.
 
 Les [prompts de génération](generation-prompts.fr.md) sont conservés pour permettre de reproduire ou faire évoluer l’intention graphique.
 

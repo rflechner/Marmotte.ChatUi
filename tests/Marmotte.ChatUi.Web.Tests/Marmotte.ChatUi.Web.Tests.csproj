@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <ProjectReference Include="../../src/Marmotte.ChatUi.Web/Marmotte.ChatUi.Web.csproj" />
+  </ItemGroup>
+</Project>

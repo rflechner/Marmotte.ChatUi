@@ -13,7 +13,7 @@ A .NET and Blazor chat application, with reusable components for embedding conve
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="The marmot mascot holding an Experimental Proof of Concept sign" width="320" />
 
-The project is in its planning phase. This repository contains the architecture, contribution guidelines, and visual assets. The application, integrations, and NuGet package have not yet been implemented or published.
+Milestone 1 is implemented: a .NET 10 solution with nine source projects, a minimal Blazor host using server interactivity, an Aspire AppHost that starts the web host, architecture and host tests, and CI configuration. The domain, application contracts, adapters, reusable chat components, and ServiceDefaults behavior remain for later milestones. No NuGet package has been published.
 
 ## Product direction
 
@@ -32,4 +32,20 @@ The project is in its planning phase. This repository contains the architecture,
 - [Contribution guidelines](AGENTS.md)
 - [Mascot and image provenance](docs/images/README.md)
 
-Startup instructions will be added when an executable application is available.
+## Build and run
+
+Install the .NET SDK selected by [global.json](global.json): `10.0.401` or a newer patch in the same `10.0.4xx` feature band. NuGet access is required for the first restore. Docker, a model server, and credentials are not required for M1.
+
+Run from the repository root:
+
+```sh
+dotnet restore Marmotte.ChatUi.slnx --locked-mode
+dotnet build Marmotte.ChatUi.slnx --configuration Release --no-restore
+dotnet format Marmotte.ChatUi.slnx --verify-no-changes --no-restore
+dotnet test --solution Marmotte.ChatUi.slnx --configuration Release --no-build --no-restore
+dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
+```
+
+Open [the local host](http://localhost:5180). The page displays the project status and mascot; it does not yet provide chat. Stop it with Ctrl+C.
+
+See the [development guide](docs/development.md) for pinned dependencies, conventions, and test coverage; [operations](docs/operations.md) for Aspire startup and development secrets; and [integration](docs/integration.md) for component boundaries and rendering decisions.

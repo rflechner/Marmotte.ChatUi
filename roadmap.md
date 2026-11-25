@@ -8,7 +8,7 @@ This roadmap turns the [architecture decisions](ARCHITECTURE.md) into actionable
 
 ## Starting point
 
-The bilingual READMEs, architecture documents, contribution guidelines, and mascot assets already exist. The application, executable infrastructure, and packages have not yet been implemented or published. All 82 tasks below therefore remain open.
+M1 is complete: the solution foundations, minimal Blazor/Aspire host, initial tests, and CI configuration are implemented. Of the 82 tasks below, 6 are complete and 76 remain open. The chat features, external integrations, and NuGet publication remain planned.
 
 ## Scope and tracking
 
@@ -43,14 +43,16 @@ The bilingual READMEs, architecture documents, contribution guidelines, and masc
 
 **Dependencies:** None.
 
-- [ ] **1.1** — Select compatible .NET, Aspire, and dependency versions; record prerequisites and pin the SDK and package versions.
-- [ ] **1.2** — Confirm the host application's Blazor rendering mode, starting from the server-interactivity proposal, and define the rendering modes supported by reusable components.
-- [ ] **1.3** — Create Domain, Contracts, Application, Components, Infrastructure.OpenAI, Persistence.PostgreSql, Web, AppHost, and ServiceDefaults with the intended dependency direction.
-- [ ] **1.4** — Configure nullable reference types, formatting, analyzers, and dependency management; document the C# and Razor conventions.
-- [ ] **1.5** — Set up the test projects and a CI workflow for restore, build, and relevant checks without requiring personal model servers or paid credentials.
-- [ ] **1.6** — Document the verified build and test commands in English and French, including how to configure development secrets.
+- [x] **1.1** — Select compatible .NET, Aspire, and dependency versions; record prerequisites and pin the SDK and package versions.
+- [x] **1.2** — Confirm the host application's Blazor rendering mode, starting from the server-interactivity proposal, and define the rendering modes supported by reusable components.
+- [x] **1.3** — Create Domain, Contracts, Application, Components, Infrastructure.OpenAI, Persistence.PostgreSql, Web, AppHost, and ServiceDefaults with the intended dependency direction.
+- [x] **1.4** — Configure nullable reference types, formatting, analyzers, and dependency management; document the C# and Razor conventions.
+- [x] **1.5** — Set up the test projects and a CI workflow for restore, build, and relevant checks without requiring personal model servers or paid credentials.
+- [x] **1.6** — Document the verified build and test commands in English and French, including how to configure development secrets.
 
 **Exit criterion:** A fresh checkout builds and passes the initial checks; project references follow the architecture and the component library does not depend on server adapters.
+
+**Validation (2026-11-25):** On macOS ARM64 with SDK 10.0.401, locked restore, Release build (zero warnings/errors), formatting, and all 18 tests passed from a source copy without existing build outputs. Direct web startup and web-only Aspire startup both served the foundation page and shut down successfully. Development-secret set/remove commands were checked with a dummy value. English/French document pairs and local links were checked. CI is configured for Ubuntu; no GitHub Actions run or cross-platform runtime validation is claimed. See the [development](docs/development.md), [operations](docs/operations.md), and [integration](docs/integration.md) guides.
 
 <a id="milestone-2"></a>
 

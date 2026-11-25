@@ -16,7 +16,7 @@ The local files below are unmodified copies of the images attached by the user. 
 Two variants were created from the references using the built-in imagegen tool:
 
 - [Marmotte.ChatUi banner](marmotte-chatui-banner.png), used in the README: 1774 × 887 pixels, PNG with transparency.
-- [Compact mascot](marmotte-chatui-mascot.png), ready for the future application: 1254 × 1254 pixels, PNG with transparency.
+- [Compact mascot](marmotte-chatui-mascot.png), used by the M1 web host: 1254 × 1254 pixels, PNG with transparency. An unchanged deployment copy lives in `src/Marmotte.ChatUi.Web/wwwroot/images/`; keep it synchronized with this source.
 
 The [generation prompts](generation-prompts.md) are preserved so the visual intent can be reproduced or refined.
 

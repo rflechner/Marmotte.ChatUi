@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <UserSecretsId>Marmotte.ChatUi.Web.Development</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Marmotte.ChatUi.Components/Marmotte.ChatUi.Components.csproj" />
+    <ProjectReference Include="../Marmotte.ChatUi.Application/Marmotte.ChatUi.Application.csproj" />
+    <ProjectReference Include="../Marmotte.ChatUi.Infrastructure.OpenAI/Marmotte.ChatUi.Infrastructure.OpenAI.csproj" />
+    <ProjectReference Include="../Marmotte.ChatUi.Persistence.PostgreSql/Marmotte.ChatUi.Persistence.PostgreSql.csproj" />
+    <ProjectReference Include="../Marmotte.ChatUi.ServiceDefaults/Marmotte.ChatUi.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="Aspire.AppHost.Sdk" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- M1 uses the SDK's pinned NuGet dashboard/DCP, without a separate CLI installation. -->
+    <AspireUseCliBundle>false</AspireUseCliBundle>
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+    <!-- Aspire's native dashboard and orchestrator packages depend on the build host. -->
+    <NuGetLockFilePath>packages.$(NETCoreSdkRuntimeIdentifier).lock.json</NuGetLockFilePath>
+    <UserSecretsId>Marmotte.ChatUi.AppHost.Development</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <ProjectReference Include="../Marmotte.ChatUi.Web/Marmotte.ChatUi.Web.csproj" />
+  </ItemGroup>
+</Project>

@@ -4,7 +4,7 @@
 
 ## Statut et objectif
 
-Ce document formalise l’architecture cible et les décisions de cadrage. À ce stade, le dépôt contient de la documentation et des ressources graphiques ; l’application et les packages ne sont pas encore implémentés ou publiés.
+Ce document distingue le socle M1 implémenté de l’architecture produit cible. Les neuf projets sources, un hôte Blazor minimal en Interactive Server, un AppHost Aspire limité au web et les premières vérifications automatisées existent désormais. Les comportements métier, les intégrations, les composants de chat réutilisables et la publication NuGet restent prévus.
 
 Marmotte.ChatUi vise deux usages : une application de chat en .NET et Blazor, inspirée d’AnythingLLM et d’Open WebUI, et une bibliothèque de composants et widgets intégrables dans d’autres applications. L’application complète utilisera les mêmes composants que ceux distribués en NuGet.
 
@@ -35,7 +35,7 @@ Les frontières importantes correspondent à des assemblies distinctes. Il s’a
 
 ### Découpage cible
 
-Les noms ci-dessous constituent une proposition de structure à concrétiser lors de la création de la solution.
+Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts, Application, les deux adaptateurs, Components et ServiceDefaults établissent actuellement les frontières d’assemblies sans implémenter leurs futures API. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
 
 | Projet / assembly | Responsabilité | Dépendances internes principales |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ Les repositories exposent des opérations métier ciblées et paginées. Ils ne 
 
 ## Composants Blazor et distribution NuGet
 
-La bibliothèque est une Razor Class Library destinée à être publiée sur NuGet. Elle fournit notamment la liste des messages, la zone de saisie, les pièces jointes, les états de génération et un widget de chat composable.
+La bibliothèque est une Razor Class Library destinée à être publiée sur NuGet. Son socle M1 référence uniquement Contracts et les packages de composants Blazor compatibles avec le navigateur. La liste des messages, la zone de saisie, les pièces jointes, les états de génération et le widget de chat composable sont prévus pour M7. Consulter [l’intégration](docs/integration.fr.md) pour le contrat de rendu et les limites actuelles.
 
 Son API repose sur des paramètres, événements, templates et contrats de présentation stables. L’application consommatrice fournit les services de conversation et de pièces jointes dont elle a besoin. Les composants ne nécessitent pas l’application complète et n’imposent pas de base de données, d’identité ou de SDK de modèle.
 
@@ -89,7 +89,7 @@ La publication NuGet est un objectif de livraison ultérieur. Aucun nom réserv�
 
 ## Application hôte et identité
 
-L’application complète est une application Blazor hébergée en ASP.NET Core. Une interactivité serveur constitue le point de départ proposé : les appels aux modèles, les secrets et la persistance restent côté serveur. Le mode de rendu sera confirmé à la création de la solution ; les composants publics ne doivent pas dépendre implicitement d’un circuit Blazor serveur.
+L’hôte utilise ASP.NET Core Blazor en Interactive Server avec prérendu activé pour Routes et HeadOutlet. Les futurs appels aux modèles, secrets et accès à la persistance restent ainsi côté serveur. Les composants réutilisables héritent du mode choisi par l’hôte consommateur et ne doivent pas supposer un circuit serveur. Le SSR statique permet uniquement l’affichage ; Interactive Server est la première cible d’intégration interactive. Interactive WebAssembly et Auto restent des cibles de conception nécessitant des tests de consommation distincts avant d’en annoncer la prise en charge.
 
 Keycloak est le fournisseur d’identité OIDC. Aspire lance son conteneur comme une ressource distincte, avec une configuration reproductible du realm, du client et des redirections. Le client OIDC de l’application et les adresses publiques de l’autorité doivent être cohérents avec ce que le navigateur peut réellement joindre.
 
@@ -131,7 +131,7 @@ Les dimensions des embeddings, modèles, index vectoriels et règles de recherch
 
 ## Orchestration Aspire
 
-L’AppHost décrit l’application web, Keycloak et PostgreSQL avec pgvector, leurs dépendances, paramètres et contrôles de disponibilité. La configuration d’hébergement compose les services sans contaminer le domaine ni le NuGet de composants.
+L’AppHost M1 démarre uniquement l’application web. M3 ajoutera Keycloak et PostgreSQL avec pgvector, leurs dépendances, leur configuration, leurs contrôles de disponibilité et le comportement de ServiceDefaults. La configuration d’hébergement compose les services sans contaminer le domaine ni le NuGet de composants.
 
 Prévoir une initialisation reproductible, les migrations, les volumes persistants et les informations de connexion injectées aux consommateurs. Le stockage de Keycloak est distinct des tables métier, même si un même serveur PostgreSQL héberge des bases séparées.
 
@@ -181,4 +181,4 @@ Les images de référence et leur provenance sont conservées dans [docs/images/
 
 ## Décisions restant à concrétiser
 
-Les versions .NET/Aspire et des dépendances, le mode de rendu Blazor définitif, l’accès aux données, le stockage des binaires, le moteur de rendu PDF et la cible de production seront précisés lors de l’implémentation correspondante. Ces points ouverts ne remettent pas en cause les frontières de dépendance, PostgreSQL, pgvector, OIDC/Keycloak ou la distribution des composants en NuGet.
+.NET 10, Aspire 13.6.5, les dépendances fixées et le rendu Interactive Server sont retenus dans M1 ; consulter le [guide de développement](docs/development.fr.md) et le [guide d’exploitation](docs/operations.fr.md). L’accès aux données, le stockage des binaires, le moteur de rendu PDF et la cible de production seront précisés lors de l’implémentation correspondante. Ces points ouverts ne remettent pas en cause les frontières de dépendance, PostgreSQL, pgvector, OIDC/Keycloak ou la distribution des composants en NuGet.

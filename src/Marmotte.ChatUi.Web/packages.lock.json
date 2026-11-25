@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "Microsoft.AspNetCore.App.Internal.Assets": {
+        "type": "Direct",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "+sIBo9AMBZH46qHWHQdfzcGMt+RuBaPYrUMOAM9VjA7MQ9QtIez3lq1C3E05+Yroa94KKt3DSWaxmCI4H28a9Q=="
+      },
+      "marmotte.chatui.application": {
+        "type": "Project",
+        "dependencies": {
+          "Marmotte.ChatUi.Contracts": "[1.0.0, )",
+          "Marmotte.ChatUi.Domain": "[1.0.0, )"
+        }
+      },
+      "marmotte.chatui.components": {
+        "type": "Project",
+        "dependencies": {
+          "Marmotte.ChatUi.Contracts": "[1.0.0, )"
+        }
+      },
+      "marmotte.chatui.contracts": {
+        "type": "Project"
+      },
+      "marmotte.chatui.domain": {
+        "type": "Project"
+      },
+      "marmotte.chatui.infrastructure.openai": {
+        "type": "Project",
+        "dependencies": {
+          "Marmotte.ChatUi.Application": "[1.0.0, )",
+          "Marmotte.ChatUi.Domain": "[1.0.0, )"
+        }
+      },
+      "marmotte.chatui.persistence.postgresql": {
+        "type": "Project",
+        "dependencies": {
+          "Marmotte.ChatUi.Application": "[1.0.0, )",
+          "Marmotte.ChatUi.Domain": "[1.0.0, )"
+        }
+      },
+      "marmotte.chatui.servicedefaults": {
+        "type": "Project"
+      }
+    }
+  }
+}

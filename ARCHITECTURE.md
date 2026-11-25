@@ -4,7 +4,7 @@ English | [Français](ARCHITECTURE.fr.md)
 
 ## Status and purpose
 
-This document records the target architecture and planning decisions. At this stage, the repository contains documentation and visual assets; the application and packages have not yet been implemented or published.
+This document distinguishes the implemented M1 foundations from the target product architecture. The nine source projects, a minimal Interactive Server Blazor host, a web-only Aspire AppHost, and initial automated checks now exist. Business behavior, integrations, reusable chat components, and NuGet publication remain planned.
 
 Marmotte.ChatUi serves two purposes: a .NET and Blazor chat application inspired by AnythingLLM and Open WebUI, and a library of components and widgets that can be embedded in other applications. The complete application will use the same components distributed through NuGet.
 
@@ -35,7 +35,7 @@ Important boundaries correspond to separate assemblies. The initial design is a 
 
 ### Target structure
 
-The names below are a proposed structure to establish when creating the solution.
+All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, Application, the two adapters, Components, and ServiceDefaults currently establish assembly boundaries without implementing their future APIs. Web references ServiceDefaults in addition to the dependencies listed below.
 
 | Project / assembly | Responsibility | Main internal dependencies |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ Repositories expose focused, paginated business operations. They do not expose I
 
 ## Blazor components and NuGet distribution
 
-The library is a Razor Class Library intended for publication on NuGet. It provides a message list, message composer, attachments, generation states, and a composable chat widget.
+The library is a Razor Class Library intended for publication on NuGet. Its M1 scaffold references only Contracts and the browser-compatible Blazor component packages. A message list, message composer, attachments, generation states, and a composable chat widget are planned for M7. See [integration](docs/integration.md) for the rendering contract and current limitations.
 
 Its API relies on stable parameters, events, templates, and presentation contracts. The consuming application supplies the conversation and attachment services it needs. The components do not require the complete application and do not mandate a database, identity provider, or model SDK.
 
@@ -89,7 +89,7 @@ NuGet publication is a later delivery milestone. No reserved package name, publi
 
 ## Host application and identity
 
-The complete application is a Blazor application hosted in ASP.NET Core. Server interactivity is the proposed starting point: model calls, secrets, and persistence remain on the server. The rendering mode will be confirmed when creating the solution; public components must not implicitly depend on a server-side Blazor circuit.
+The host uses ASP.NET Core Blazor with Interactive Server rendering and prerendering enabled for Routes and HeadOutlet. This keeps future model calls, secrets, and persistence on the server. Reusable components inherit the consuming host’s render mode and must not assume a server circuit. Static SSR supports display only; Interactive Server is the first interactive integration target. Interactive WebAssembly and Auto remain design targets requiring separate consumption tests before support is claimed.
 
 Keycloak is the OIDC identity provider. Aspire starts its container as a separate resource, with reproducible realm, client, and redirect configuration. The application's OIDC client and the authority's public addresses must be consistent with what the browser can actually reach.
 
@@ -131,7 +131,7 @@ Embedding dimensions, models, vector indexes, and search rules will be decided a
 
 ## Aspire orchestration
 
-The AppHost describes the web application, Keycloak, and PostgreSQL with pgvector, including their dependencies, settings, and readiness checks. Hosting configuration composes the services without leaking into the domain or the component NuGet package.
+The M1 AppHost starts only the web application. M3 will add Keycloak and PostgreSQL with pgvector, including dependencies, settings, readiness checks, and ServiceDefaults behavior. Hosting configuration composes the services without leaking into the domain or the component NuGet package.
 
 Provide reproducible initialization, migrations, persistent volumes, and connection information injected into consumers. Keycloak storage is separate from business tables, even if a single PostgreSQL server hosts separate databases.
 
@@ -181,4 +181,4 @@ Reference images and their provenance are preserved in [docs/images/README.md](d
 
 ## Decisions to finalize
 
-.NET/Aspire and dependency versions, the final Blazor rendering mode, data access, binary storage, the PDF rendering engine, and the production target will be specified during their respective implementation stages. These open points do not change the dependency boundaries, PostgreSQL, pgvector, OIDC/Keycloak, or NuGet distribution of the components.
+.NET 10, Aspire 13.6.5, the pinned dependencies, and Interactive Server rendering are selected in M1; see the [development guide](docs/development.md) and [operations guide](docs/operations.md). Data access, binary storage, the PDF rendering engine, and the production target will be specified during their respective implementation stages. These open points do not change the dependency boundaries, PostgreSQL, pgvector, OIDC/Keycloak, or NuGet distribution of the components.

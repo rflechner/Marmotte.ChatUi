@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Marmotte.ChatUi.Domain/Marmotte.ChatUi.Domain.csproj" />
+    <Project Path="src/Marmotte.ChatUi.Contracts/Marmotte.ChatUi.Contracts.csproj" />
+    <Project Path="src/Marmotte.ChatUi.Application/Marmotte.ChatUi.Application.csproj" />
+    <Project Path="src/Marmotte.ChatUi.Components/Marmotte.ChatUi.Components.csproj" />
+    <Project Path="src/Marmotte.ChatUi.Infrastructure.OpenAI/Marmotte.ChatUi.Infrastructure.OpenAI.csproj" />
+    <Project Path="src/Marmotte.ChatUi.Persistence.PostgreSql/Marmotte.ChatUi.Persistence.PostgreSql.csproj" />
+    <Project Path="src/Marmotte.ChatUi.Web/Marmotte.ChatUi.Web.csproj" />
+    <Project Path="src/Marmotte.ChatUi.AppHost/Marmotte.ChatUi.AppHost.csproj" />
+    <Project Path="src/Marmotte.ChatUi.ServiceDefaults/Marmotte.ChatUi.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Marmotte.ChatUi.Architecture.Tests/Marmotte.ChatUi.Architecture.Tests.csproj" />
+    <Project Path="tests/Marmotte.ChatUi.Web.Tests/Marmotte.ChatUi.Web.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <ProjectReference Include="../Marmotte.ChatUi.Contracts/Marmotte.ChatUi.Contracts.csproj" />
+  </ItemGroup>
+</Project>

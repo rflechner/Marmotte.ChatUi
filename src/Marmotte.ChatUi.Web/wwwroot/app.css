@@ -1,0 +1,35 @@
+.marmotte-shell {
+    color-scheme: light dark;
+    --marmotte-surface: #f5faf9;
+    --marmotte-text: #193d3b;
+    --marmotte-space: 1.5rem;
+    --marmotte-font: system-ui, sans-serif;
+    margin: 0;
+    background: var(--marmotte-surface);
+    color: var(--marmotte-text);
+    font-family: var(--marmotte-font);
+    line-height: 1.6;
+}
+
+.marmotte-shell .foundation {
+    max-width: 42rem;
+    margin: auto;
+    padding: var(--marmotte-space);
+}
+
+.marmotte-shell .mascot {
+    display: block;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.marmotte-shell a {
+    color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+    .marmotte-shell {
+        --marmotte-surface: #132b2b;
+        --marmotte-text: #e8f6f2;
+    }
+}
