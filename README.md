@@ -27,6 +27,7 @@ The project is in its planning phase. This repository contains the architecture,
 
 ## Documentation
 
+- [Roadmap and numbered milestones](roadmap.md)
 - [Architecture and scope](ARCHITECTURE.md)
 - [Contribution guidelines](AGENTS.md)
 - [Mascot and image provenance](docs/images/README.md)

@@ -27,6 +27,7 @@ Le projet est en phase de cadrage. Ce dépôt contient l’architecture, les con
 
 ## Documentation
 
+- [Roadmap et tâches par milestone](roadmap.fr.md)
 - [Architecture et périmètre](ARCHITECTURE.fr.md)
 - [Consignes de contribution](AGENTS.fr.md)
 - [Mascotte et provenance des images](docs/images/README.fr.md)
