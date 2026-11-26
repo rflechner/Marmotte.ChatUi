@@ -4,7 +4,7 @@ English | [Français](ARCHITECTURE.fr.md)
 
 ## Status and purpose
 
-This document distinguishes the implemented M1/M2 core from the target product architecture. The nine source projects, a minimal Interactive Server Blazor host, a web-only Aspire AppHost, domain invariants, authorized conversation/settings use cases, ports, and automated checks now exist. Infrastructure integrations, reusable chat components, and NuGet publication remain planned; Web is not yet wired to the core.
+This document distinguishes the implemented M1–M3 foundations from the target product architecture. The nine source projects, an Interactive Server Blazor host, the domain and authorized use cases, and local Aspire infrastructure now exist. PostgreSQL/pgvector and Keycloak start with persistent data and readiness checks; ServiceDefaults supplies host diagnostics. Business persistence, OIDC sign-in, model adapters, reusable chat components, and NuGet publication remain planned; Web is not yet wired to the core.
 
 Marmotte.ChatUi serves two purposes: a .NET and Blazor chat application inspired by AnythingLLM and Open WebUI, and a library of components and widgets that can be embedded in other applications. The complete application will use the same components distributed through NuGet.
 
@@ -35,7 +35,7 @@ Important boundaries correspond to separate assemblies. The initial design is a 
 
 ### Target structure
 
-All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, and Application implement M2. The two adapters, Components, and ServiceDefaults still establish boundaries without their future implementations. Web references ServiceDefaults in addition to the dependencies listed below.
+All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, and Application implement M2. The two business adapters and Components still establish boundaries without their future implementations. AppHost and ServiceDefaults implement M3 orchestration and diagnostics. Web references ServiceDefaults in addition to the dependencies listed below.
 
 | Project / assembly | Responsibility | Main internal dependencies |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ The Persistence.PostgreSql assembly contains all relational details: repository 
 
 PostgreSQL stores conversations, messages, profiles, preferences, and attachment metadata. Binary storage has a separate port to avoid coupling the domain to a database or file system. The initial adapter and its retention policy will be defined when implementing uploads.
 
-pgvector is an extension: it must be available in the PostgreSQL installation, then enabled in each database that uses it. The AppHost will use a PostgreSQL image that includes pgvector, with compatible versions and an explicit tag chosen during implementation. Activation will be reproducible:
+pgvector is an extension: it must be available in the PostgreSQL installation, then enabled in each database that uses it. M3 pins `pgvector/pgvector:0.8.7-pg17-bookworm` with a multi-platform digest and an explicit PostgreSQL 17 volume path. A short-lived initializer enables vector in `marmotte_chat` on every AppHost start, after database readiness and before Web:
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -125,15 +125,17 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 This command enables an already installed extension; it does not install its files on the server. Installation and activation are described in the [official pgvector documentation](https://github.com/pgvector/pgvector#installation).
 
-Activation and migrations must be verified with both a new volume and an existing database. Persist data across restarts. A container's first-time initialization scripts do not replace migrations for an existing database.
+M3 checks activation on a new volume, idempotence on restart, and repair of an existing database after extension removal, while retaining application and identity probe data. The volume survives container shutdown. Business migrations remain M5 work; first-time image scripts do not replace them.
 
 Embedding dimensions, models, vector indexes, and search rules will be decided alongside a feature that uses them. The initial chat does not require speculative embeddings or a search schema.
 
 ## Aspire orchestration
 
-The M1 AppHost starts only the web application. M3 will add Keycloak and PostgreSQL with pgvector, including dependencies, settings, readiness checks, and ServiceDefaults behavior. Hosting configuration composes the services without leaking into the domain or the component NuGet package.
+M3 starts `postgres`, databases `chatdb`/`keycloakdb`, the `database-init` container, `keycloak`, and `web`. PostgreSQL health gates database creation; database readiness gates initialization and Keycloak; successful vector activation and Keycloak readiness gate Web. The initializer has bounded connection, statement, and lock timeouts and a failing exit code on SQL errors. Hosting configuration stays outside the domain and component NuGet package.
 
-Provide reproducible initialization, migrations, persistent volumes, and connection information injected into consumers. Keycloak storage is separate from business tables, even if a single PostgreSQL server hosts separate databases.
+One named PostgreSQL volume stores separate `marmotte_chat` and `marmotte_identity` databases. The local POC uses a shared administrator role; separate least-privilege production credentials are not implemented. Keycloak 26.6.4 is pinned by digest, uses its PostgreSQL database, and imports realm `marmotte` and confidential client `marmotte-web` only when the realm is absent. Local HTTP origins/redirects are explicit; automatic Keycloak HTTPS termination is disabled per resource so certificate availability cannot change the authority. The dashboard keeps HTTPS. Generated secret parameters persist in AppHost user secrets; only the relevant connection/client settings reach Web. OIDC handlers remain M4 work.
+
+ServiceDefaults provides Development-only `/health` and `/alive`, service discovery, bounded HTTP defaults without retries, and optional OTLP metrics/traces. It configures no body/custom-header capture, SQL instrumentation, or log export. Web currently checks process health; ongoing adapter dependency checks remain future work. A Docker integration test validates fresh startup, repeated initialization, data retention, and browser-visible identity configuration. See [operations](docs/operations.md) for lifecycle, secrets, diagnostics, and limitations.
 
 The Aspire documentation describes the [PostgreSQL](https://aspire.dev/integrations/databases/postgres/postgres-get-started/) and [Keycloak](https://aspire.dev/integrations/security/keycloak/) integrations. Orchestrated local startup is part of the first version. A production deployment target has not yet been selected.
 

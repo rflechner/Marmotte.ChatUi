@@ -38,5 +38,6 @@
     <Project Path="tests/Marmotte.ChatUi.Core.Tests/Marmotte.ChatUi.Core.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Architecture.Tests/Marmotte.ChatUi.Architecture.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Web.Tests/Marmotte.ChatUi.Web.Tests.csproj" />
+    <Project Path="tests/Marmotte.ChatUi.Infrastructure.Tests/Marmotte.ChatUi.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>

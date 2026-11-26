@@ -8,7 +8,7 @@ Cette feuille de route décline les décisions de [l’architecture](ARCHITECTUR
 
 ## Point de départ
 
-M1 et M2 sont terminés : le socle de la solution, l’hôte Blazor/Aspire minimal, les invariants métier, les cas d’usage autorisés des conversations/paramètres, les ports, les contrats de présentation, les tests et la configuration CI sont implémentés. Sur les 82 tâches ci-dessous, 13 sont terminées et 69 restent ouvertes. L’UI de chat, les intégrations externes et la publication NuGet restent prévues.
+M1 à M3 sont terminés : le socle de la solution, le domaine et les cas d’usage autorisés, et l’infrastructure locale Aspire avec PostgreSQL/pgvector et Keycloak persistants, les contrôles de santé, les diagnostics, les tests et la configuration CI. Sur les 82 tâches ci-dessous, 20 sont terminées et 62 restent ouvertes. L’UI de chat, la persistance métier, la connexion OIDC, les intégrations de modèles et la publication NuGet restent prévues.
 
 ## Périmètre et suivi
 
@@ -82,15 +82,17 @@ M1 et M2 sont terminés : le socle de la solution, l’hôte Blazor/Aspire minim
 
 **Dépendances:** [M1](#milestone-1).
 
-- [ ] **3.1** — Déclarer les ressources de l’application web, PostgreSQL et Keycloak dans AppHost, avec leurs dépendances et contrôles de disponibilité.
-- [ ] **3.2** — Choisir et fixer une image PostgreSQL incluant pgvector ; configurer les volumes persistants et des bases distinctes pour l’application et Keycloak.
-- [ ] **3.3** — Prévoir un processus idempotent d’activation de l’extension vector et le vérifier sur une base vide et un volume existant.
-- [ ] **3.4** — Configurer l’initialisation reproductible du realm et du client Keycloak, la persistance des identités et des adresses d’autorité et de redirection accessibles au navigateur.
-- [ ] **3.5** — Injecter les informations de connexion et secrets dans les services hôtes concernés ; garder la configuration des ressources hors du domaine et du package de composants.
-- [ ] **3.6** — Configurer ServiceDefaults, les contrôles de santé et les diagnostics utiles sans journaliser les conversations, le contenu des fichiers ni les identifiants d’accès.
-- [ ] **3.7** — Documenter et vérifier le démarrage, l’arrêt, le redémarrage et le diagnostic locaux, notamment l’accès aux serveurs de modèles locaux depuis l’hôte ou les conteneurs.
+- [x] **3.1** — Déclarer les ressources de l’application web, PostgreSQL et Keycloak dans AppHost, avec leurs dépendances et contrôles de disponibilité.
+- [x] **3.2** — Choisir et fixer une image PostgreSQL incluant pgvector ; configurer les volumes persistants et des bases distinctes pour l’application et Keycloak.
+- [x] **3.3** — Prévoir un processus idempotent d’activation de l’extension vector et le vérifier sur une base vide et un volume existant.
+- [x] **3.4** — Configurer l’initialisation reproductible du realm et du client Keycloak, la persistance des identités et des adresses d’autorité et de redirection accessibles au navigateur.
+- [x] **3.5** — Injecter les informations de connexion et secrets dans les services hôtes concernés ; garder la configuration des ressources hors du domaine et du package de composants.
+- [x] **3.6** — Configurer ServiceDefaults, les contrôles de santé et les diagnostics utiles sans journaliser les conversations, le contenu des fichiers ni les identifiants d’accès.
+- [x] **3.7** — Documenter et vérifier le démarrage, l’arrêt, le redémarrage et le diagnostic locaux, notamment l’accès aux serveurs de modèles locaux depuis l’hôte ou les conteneurs.
 
 **Critère de validation:** Aspire démarre les ressources nécessaires, expose leur disponibilité, conserve les données entre redémarrages et rend l’extension vector disponible dans la base applicative.
+
+**Validation (2026-11-26) :** Sur macOS ARM64 avec le SDK 10.0.401 et Docker via Rancher Desktop, la restauration verrouillée, la compilation Release (sans avertissement ni erreur), le formatage/les analyseurs, les 57 tests courants et le test d’intégration Docker activé explicitement passent. Le véritable AppHost avec son tableau de bord démarre trois fois sur le même volume isolé : initialisation neuve, redémarrage idempotent, puis réparation après suppression de vector, en conservant des données témoins SQL et un utilisateur Keycloak. Les contrôles couvrent les bases séparées, vector 0.8.7, la disponibilité, l’émetteur visible au navigateur et le client confidentiel/PKCE/les redirections. Le démarrage normal du tableau de bord et l’arrêt par Ctrl+C ont aussi été contrôlés sur le volume de développement. Une sonde HTTP locale temporaire a confirmé l’accès en boucle locale depuis l’hôte et via la passerelle hôte depuis un conteneur sur Rancher Desktop. Les deux langues et les liens locaux ont été revus. Les sept paires de fichiers de verrouillage par plateforme sont régénérées ; la validation d’exécution se limite à macOS ARM64. Le job CI Docker est configuré, sans exécution GitHub Actions revendiquée. La connexion OIDC, les migrations/repositories métier et la compatibilité des modèles restent pour les milestones suivants. Consulter [l’exploitation](docs/operations.fr.md) et le [développement](docs/development.fr.md).
 
 <a id="milestone-4"></a>
 

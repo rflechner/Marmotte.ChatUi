@@ -4,7 +4,7 @@
 
 ## Statut et objectif
 
-Ce document distingue le cœur M1/M2 implémenté de l’architecture produit cible. Les neuf projets sources, un hôte Blazor minimal en Interactive Server, un AppHost Aspire limité au web, les invariants métier, les cas d’usage autorisés des conversations/paramètres, les ports et les vérifications automatisées existent désormais. Les intégrations d’infrastructure, les composants de chat réutilisables et la publication NuGet restent prévus ; Web n’est pas encore relié au cœur.
+Ce document distingue le socle M1–M3 implémenté de l’architecture produit cible. Les neuf projets sources, un hôte Blazor Interactive Server, le domaine et les cas d’usage autorisés, ainsi que l’infrastructure locale Aspire existent désormais. PostgreSQL/pgvector et Keycloak démarrent avec des données persistantes et des contrôles de disponibilité ; ServiceDefaults fournit les diagnostics de l’hôte. La persistance métier, la connexion OIDC, les adaptateurs de modèles, les composants de chat réutilisables et la publication NuGet restent prévus ; Web n’est pas encore relié au cœur.
 
 Marmotte.ChatUi vise deux usages : une application de chat en .NET et Blazor, inspirée d’AnythingLLM et d’Open WebUI, et une bibliothèque de composants et widgets intégrables dans d’autres applications. L’application complète utilisera les mêmes composants que ceux distribués en NuGet.
 
@@ -35,7 +35,7 @@ Les frontières importantes correspondent à des assemblies distinctes. Il s’a
 
 ### Découpage cible
 
-Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Les deux adaptateurs, Components et ServiceDefaults établissent encore les frontières sans leurs futures implémentations. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
+Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Les deux adaptateurs métier et Components établissent encore les frontières sans leurs futures implémentations. AppHost et ServiceDefaults implémentent l’orchestration et les diagnostics M3. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
 
 | Projet / assembly | Responsabilité | Dépendances internes principales |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ L’assembly Persistence.PostgreSql contient l’ensemble des détails relationn
 
 PostgreSQL conserve les conversations, messages, profils, préférences et métadonnées de pièces jointes. Le stockage des binaires dispose d’un port distinct pour éviter de figer le domaine sur une base ou un système de fichiers. L’adaptateur initial et sa politique de conservation seront définis lors de l’implémentation des uploads.
 
-pgvector est une extension : elle doit être disponible dans l’installation PostgreSQL, puis activée dans chaque base qui l’utilise. L’AppHost utilisera une image PostgreSQL incluant pgvector, avec versions compatibles et tag explicite au moment de l’implémentation. L’activation sera reproductible :
+pgvector est une extension : elle doit être disponible dans l’installation PostgreSQL, puis activée dans chaque base qui l’utilise. M3 fixe `pgvector/pgvector:0.8.7-pg17-bookworm` avec une empreinte multiplateforme et le chemin explicite du volume PostgreSQL 17. Un initialiseur éphémère active vector dans `marmotte_chat` à chaque démarrage AppHost, après disponibilité de la base et avant Web :
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -125,15 +125,17 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 Cette commande active une extension déjà installée ; elle n’installe pas ses fichiers sur le serveur. L’installation et l’activation sont décrites dans la [documentation officielle pgvector](https://github.com/pgvector/pgvector#installation).
 
-L’activation et les migrations doivent être vérifiées avec un volume neuf comme avec une base existante. Prévoir la persistance des données entre redémarrages. Les scripts de première initialisation d’un conteneur ne remplacent pas les migrations d’une base existante.
+M3 contrôle l’activation sur un volume neuf, l’idempotence au redémarrage et la réparation d’une base existante après suppression de l’extension, en conservant des données témoins applicatives et d’identité. Le volume survit à l’arrêt des conteneurs. Les migrations métier restent prévues pour M5 ; les scripts du premier démarrage ne les remplacent pas.
 
 Les dimensions des embeddings, modèles, index vectoriels et règles de recherche seront décidés avec une fonctionnalité qui les utilise. Aucun embedding ni schéma de recherche spéculatif n’est requis pour le chat initial.
 
 ## Orchestration Aspire
 
-L’AppHost M1 démarre uniquement l’application web. M3 ajoutera Keycloak et PostgreSQL avec pgvector, leurs dépendances, leur configuration, leurs contrôles de disponibilité et le comportement de ServiceDefaults. La configuration d’hébergement compose les services sans contaminer le domaine ni le NuGet de composants.
+M3 démarre `postgres`, les bases `chatdb`/`keycloakdb`, le conteneur `database-init`, `keycloak` et `web`. La santé PostgreSQL conditionne la création des bases ; leur disponibilité conditionne l’initialisation et Keycloak ; l’activation réussie de vector et la disponibilité de Keycloak conditionnent Web. L’initialiseur borne les délais de connexion, d’instruction et de verrou et échoue avec un code de sortie non nul en cas d’erreur SQL. La configuration d’hébergement reste hors du domaine et du NuGet de composants.
 
-Prévoir une initialisation reproductible, les migrations, les volumes persistants et les informations de connexion injectées aux consommateurs. Le stockage de Keycloak est distinct des tables métier, même si un même serveur PostgreSQL héberge des bases séparées.
+Un volume PostgreSQL nommé conserve les bases distinctes `marmotte_chat` et `marmotte_identity`. Le POC local utilise un rôle administrateur partagé ; les identifiants de production séparés et à privilèges minimaux ne sont pas implémentés. Keycloak 26.6.4 est fixé par empreinte, utilise sa base PostgreSQL et importe le realm `marmotte` et le client confidentiel `marmotte-web` seulement si le realm est absent. Les origines/redirections HTTP locales sont explicites ; la terminaison HTTPS automatique de Keycloak est désactivée pour cette ressource afin que la disponibilité d’un certificat ne change pas l’autorité. Le tableau de bord conserve HTTPS. Les paramètres secrets générés persistent dans les user secrets AppHost ; seuls les paramètres de connexion/client concernés arrivent dans Web. Les gestionnaires OIDC restent prévus pour M4.
+
+ServiceDefaults fournit `/health` et `/alive` en Development uniquement, la découverte de services, des délais HTTP bornés sans retries et des métriques/traces OTLP optionnelles. Il ne configure ni capture de corps/en-têtes personnalisés, ni instrumentation SQL, ni export de journaux. Web contrôle actuellement la santé du processus ; les contrôles continus des dépendances des adaptateurs restent à venir. Un test d’intégration Docker valide le premier démarrage, l’initialisation répétée, la conservation des données et la configuration d’identité visible au navigateur. Consulter [l’exploitation](docs/operations.fr.md) pour le cycle de vie, les secrets, les diagnostics et les limites.
 
 La documentation Aspire décrit les intégrations [PostgreSQL](https://aspire.dev/integrations/databases/postgres/postgres-get-started/) et [Keycloak](https://aspire.dev/integrations/security/keycloak/). Le démarrage local orchestré fait partie de la première version. Une cible de déploiement de production n’est pas encore choisie.
 

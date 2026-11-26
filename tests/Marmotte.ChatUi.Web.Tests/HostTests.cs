@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Marmotte.ChatUi.Web.Tests;
 
@@ -44,6 +45,45 @@ public sealed class HostTests
         await using var factory = CreateFactory();
         using var client = factory.CreateClient();
         using var response = await client.GetAsync("/missing-page", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/health")]
+    [InlineData("/alive")]
+    public async Task Development_health_endpoints_report_process_health(string path)
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Healthy", await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Failed_dependency_blocks_readiness_without_failing_liveness_or_leaking_details()
+    {
+        await using var factory = CreateFactory().WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            services.AddHealthChecks().AddCheck("dependency", () => HealthCheckResult.Unhealthy("private diagnostic"))));
+        using var client = factory.CreateClient();
+        using var readiness = await client.GetAsync("/health", TestContext.Current.CancellationToken);
+        using var liveness = await client.GetAsync("/alive", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, readiness.StatusCode);
+        Assert.Equal("Unhealthy", await readiness.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(HttpStatusCode.OK, liveness.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/health")]
+    [InlineData("/alive")]
+    public async Task Production_does_not_expose_development_health_endpoints(string path)
+    {
+        await using var factory = CreateFactory().WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+        using var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }

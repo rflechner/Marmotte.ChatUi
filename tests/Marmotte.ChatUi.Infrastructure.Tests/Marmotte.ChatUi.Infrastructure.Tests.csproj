@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <NuGetLockFilePath>packages.$(NETCoreSdkRuntimeIdentifier).lock.json</NuGetLockFilePath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <ProjectReference Include="../../src/Marmotte.ChatUi.AppHost/Marmotte.ChatUi.AppHost.csproj" />
+  </ItemGroup>
+</Project>

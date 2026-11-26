@@ -2,7 +2,7 @@
   <Sdk Name="Aspire.AppHost.Sdk" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- M1 uses the SDK's pinned NuGet dashboard/DCP, without a separate CLI installation. -->
+    <!-- Use the SDK's pinned NuGet dashboard/DCP, without a separate CLI installation. -->
     <AspireUseCliBundle>false</AspireUseCliBundle>
     <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
     <!-- Aspire's native dashboard and orchestrator packages depend on the build host. -->
@@ -11,6 +11,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.Keycloak" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <ProjectReference Include="../Marmotte.ChatUi.Web/Marmotte.ChatUi.Web.csproj" />
   </ItemGroup>
 </Project>

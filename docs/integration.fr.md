@@ -2,9 +2,9 @@
 
 [English](integration.md) | Français
 
-## Ce qui existe dans M1/M2
+## Ce qui existe dans M1–M3
 
-`Marmotte.ChatUi.Components` est une Razor Class Library `net10.0` référençant `Marmotte.ChatUi.Contracts` et `Microsoft.AspNetCore.Components.Web`. Elle ne fournit pas encore de composants publics de chat. Contracts fournit désormais `IConversationService`, `IConnectionProfileService`, `IUserPreferencesService`, les DTO, les mises à jour de génération et les erreurs sûres ; consulter la [référence des API du cœur](core.fr.md). Les consommateurs fournissent ces services sans importer Application ni les adaptateurs serveur. Son graphe de packages est contrôlé pour rester indépendant des adaptateurs PostgreSQL, Keycloak, Aspire et OpenAI. Le projet web référence déjà la RCL, mais affiche actuellement sa propre page de présentation du socle.
+`Marmotte.ChatUi.Components` est une Razor Class Library `net10.0` référençant `Marmotte.ChatUi.Contracts` et `Microsoft.AspNetCore.Components.Web`. Elle ne fournit pas encore de composants publics de chat. Contracts fournit désormais `IConversationService`, `IConnectionProfileService`, `IUserPreferencesService`, les DTO, les mises à jour de génération et les erreurs sûres ; consulter la [référence des API du cœur](core.fr.md). Les consommateurs fournissent ces services sans importer Application ni les adaptateurs serveur. Son graphe de packages est contrôlé pour rester indépendant des adaptateurs PostgreSQL, Keycloak, Aspire et OpenAI. Le projet web référence déjà la RCL, mais affiche actuellement sa propre page de présentation du socle. M3 ajoute l’infrastructure et ServiceDefaults uniquement à l’hôte de l’application complète ; les consommateurs de composants n’acquièrent aucune nouvelle dépendance serveur.
 
 Il n’existe ni package NuGet publié ni commande d’installation prise en charge. Tous les projets sont actuellement non empaquetables ; l’identité du package, ses métadonnées, la distribution de Contracts et les tests de consommation externe relèvent de M10. M7 ajoutera les vrais exemples de composants, paramètres, callbacks, templates, états, consignes d’accessibilité et API de personnalisation des thèmes.
 

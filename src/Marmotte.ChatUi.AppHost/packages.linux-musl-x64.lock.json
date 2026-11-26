@@ -47,11 +47,90 @@
           "YamlDotNet": "18.1.0"
         }
       },
+      "Aspire.Hosting.Keycloak": {
+        "type": "Direct",
+        "requested": "[13.6.5-preview.1.26559.7, )",
+        "resolved": "13.6.5-preview.1.26559.7",
+        "contentHash": "/PqBqNqlAU92LX2KwmaNAP5NNbIcKdNDptH+HJn9o0FBhAAFbuc8kavZ2dfgJaOgYWKgLwc9dPx6EVTXnbER6Q==",
+        "dependencies": {
+          "AspNetCore.HealthChecks.Uris": "9.0.0",
+          "Aspire.Hosting": "13.6.5",
+          "Google.Protobuf": "3.36.1",
+          "Grpc.AspNetCore": "2.83.0",
+          "Grpc.Net.ClientFactory": "2.83.0",
+          "Grpc.Tools": "2.83.0",
+          "Hex1b": "0.168.0",
+          "KubernetesClient": "19.0.2",
+          "MessagePack": "2.5.307",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.14",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.14",
+          "Microsoft.Extensions.Configuration.EnvironmentVariables": "10.0.14",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.14",
+          "Microsoft.Extensions.Diagnostics.HealthChecks": "8.0.33",
+          "Microsoft.Extensions.FileSystemGlobbing": "10.0.14",
+          "Microsoft.Extensions.Hosting": "10.0.14",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.14",
+          "Microsoft.Extensions.Http": "10.0.14",
+          "Microsoft.Extensions.Logging": "10.0.14",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.14",
+          "Microsoft.Extensions.Options": "10.0.14",
+          "Microsoft.Extensions.Primitives": "10.0.14",
+          "ModelContextProtocol": "1.4.1",
+          "Newtonsoft.Json": "13.0.4",
+          "OpenTelemetry.Exporter.OpenTelemetryProtocol": "1.17.0",
+          "OpenTelemetry.Extensions.Hosting": "1.17.0",
+          "Polly.Core": "8.7.0",
+          "Semver": "3.0.0",
+          "StreamJsonRpc": "2.25.29",
+          "System.IO.Hashing": "10.0.14",
+          "YamlDotNet": "18.1.0"
+        }
+      },
       "Aspire.Hosting.Orchestration.linux-musl-x64": {
         "type": "Direct",
         "requested": "[13.6.5, )",
         "resolved": "13.6.5",
         "contentHash": "ryBzZLg5Rlq+OGtjs+bXZE9I5Mwxpip73ufsos6xQRfUet+ZS3x6E/rZ7NrK6u6c7Bk4ULPzZKZFI0lRgIDGBQ=="
+      },
+      "Aspire.Hosting.PostgreSQL": {
+        "type": "Direct",
+        "requested": "[13.6.5, )",
+        "resolved": "13.6.5",
+        "contentHash": "QZff/93X9GVC6nFW/qqLbiiqpXyi2VDY4WkUhZbK9ctfZ4mzq0rkl0ANJbnzXBOzCs17eH57pE4dFY2f6CyfAw==",
+        "dependencies": {
+          "AspNetCore.HealthChecks.NpgSql": "9.0.0",
+          "AspNetCore.HealthChecks.Uris": "9.0.0",
+          "Aspire.Hosting": "13.6.5",
+          "Google.Protobuf": "3.36.1",
+          "Grpc.AspNetCore": "2.83.0",
+          "Grpc.Net.ClientFactory": "2.83.0",
+          "Grpc.Tools": "2.83.0",
+          "Hex1b": "0.168.0",
+          "KubernetesClient": "19.0.2",
+          "MessagePack": "2.5.307",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.14",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.14",
+          "Microsoft.Extensions.Configuration.EnvironmentVariables": "10.0.14",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.14",
+          "Microsoft.Extensions.Diagnostics.HealthChecks": "8.0.33",
+          "Microsoft.Extensions.FileSystemGlobbing": "10.0.14",
+          "Microsoft.Extensions.Hosting": "10.0.14",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.14",
+          "Microsoft.Extensions.Http": "10.0.14",
+          "Microsoft.Extensions.Logging": "10.0.14",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.14",
+          "Microsoft.Extensions.Options": "10.0.14",
+          "Microsoft.Extensions.Primitives": "10.0.14",
+          "ModelContextProtocol": "1.4.1",
+          "Newtonsoft.Json": "13.0.4",
+          "OpenTelemetry.Exporter.OpenTelemetryProtocol": "1.17.0",
+          "OpenTelemetry.Extensions.Hosting": "1.17.0",
+          "Polly.Core": "8.7.0",
+          "Semver": "3.0.0",
+          "StreamJsonRpc": "2.25.29",
+          "System.IO.Hashing": "10.0.14",
+          "YamlDotNet": "18.1.0"
+        }
       },
       "Aspire.Hosting": {
         "type": "Transitive",
@@ -88,6 +167,15 @@
           "StreamJsonRpc": "2.25.29",
           "System.IO.Hashing": "10.0.14",
           "YamlDotNet": "18.1.0"
+        }
+      },
+      "AspNetCore.HealthChecks.NpgSql": {
+        "type": "Transitive",
+        "resolved": "9.0.0",
+        "contentHash": "npc58/AD5zuVxERdhCl2Kb7WnL37mwX42SJcXIwvmEig0/dugOLg3SIwtfvvh3TnvTwR/sk5LYNkkPaBdks61A==",
+        "dependencies": {
+          "Microsoft.Extensions.Diagnostics.HealthChecks": "8.0.11",
+          "Npgsql": "8.0.3"
         }
       },
       "AspNetCore.HealthChecks.Uris": {
@@ -591,6 +679,14 @@
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
       },
+      "Npgsql": {
+        "type": "Transitive",
+        "resolved": "8.0.3",
+        "contentHash": "6WEmzsQJCZAlUG1pThKg/RmeF6V+I0DmBBBE/8YzpRtEzhyZzKcK7ulMANDm5CkxrALBEC8H+5plxHWtIL7xnA==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0"
+        }
+      },
       "OpenTelemetry": {
         "type": "Transitive",
         "resolved": "1.17.0",
@@ -614,23 +710,6 @@
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0",
           "OpenTelemetry.Api": "1.17.0"
-        }
-      },
-      "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
-        "type": "Transitive",
-        "resolved": "1.17.0",
-        "contentHash": "R1omQOrQpGlS0Cp5UIr/TAiuEA48JrPlgr1NPV5gESiTU7HhWU+ILe2EBSYb1fKdsSavZ7nZkHcUxAzofPqr2A==",
-        "dependencies": {
-          "OpenTelemetry": "1.17.0"
-        }
-      },
-      "OpenTelemetry.Extensions.Hosting": {
-        "type": "Transitive",
-        "resolved": "1.17.0",
-        "contentHash": "t1OwL/4qgboGMobYVT+UV5zgWnFqCp4Pw8lcsmzh8m2K8PQsTKkyxrC32tqYTMYny3GOW4q5cltE3dTVzLmRew==",
-        "dependencies": {
-          "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
-          "OpenTelemetry": "1.17.0"
         }
       },
       "Polly.Core": {
@@ -694,6 +773,25 @@
         "type": "Transitive",
         "resolved": "18.1.0",
         "contentHash": "5K+9KFg2TdTl7VXv88Qzi/0lqK6JFoNP3lRuImPYGRV7K/QYklDyTrj4+A+KAki1JsQi6qKY+hDyY7d6WRqjrw=="
+      },
+      "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
+        "type": "CentralTransitive",
+        "requested": "[1.21.0, )",
+        "resolved": "1.17.0",
+        "contentHash": "R1omQOrQpGlS0Cp5UIr/TAiuEA48JrPlgr1NPV5gESiTU7HhWU+ILe2EBSYb1fKdsSavZ7nZkHcUxAzofPqr2A==",
+        "dependencies": {
+          "OpenTelemetry": "1.17.0"
+        }
+      },
+      "OpenTelemetry.Extensions.Hosting": {
+        "type": "CentralTransitive",
+        "requested": "[1.21.0, )",
+        "resolved": "1.17.0",
+        "contentHash": "t1OwL/4qgboGMobYVT+UV5zgWnFqCp4Pw8lcsmzh8m2K8PQsTKkyxrC32tqYTMYny3GOW4q5cltE3dTVzLmRew==",
+        "dependencies": {
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
+          "OpenTelemetry": "1.17.0"
+        }
       }
     }
   }

@@ -1,52 +1,122 @@
-# Local operations
+# Operations
 
 English | [Français](operations.fr.md)
 
-## Current scope
+## Implemented scope
 
-M1 provides a local web host and an Aspire AppHost containing only the `web` resource. No database, identity provider, model connection, migration, attachment store, or health/telemetry setup is implemented yet. ServiceDefaults is an empty assembly reserved for M3. No production deployment is configured. M2 adds core use cases and test adapters only; Web does not register them, and there are no new runtime configuration keys. Connection-profile validation and the separation of settings from future credential storage are described in the [core reference](core.md).
+M3 supplies local Aspire orchestration, PostgreSQL with pgvector, a persistent Keycloak realm/client, and Web health/telemetry defaults. Web still displays the foundation page. OIDC sign-in (M4), business repositories/migrations (M5), model calls (M6), and uploads are not implemented. The injected authentication and database settings prepare those adapters; they do not enable them. No production deployment is configured.
 
-## Start and stop
+## Local startup and shutdown
 
-First run the restore and Release build commands in the [development guide](development.md). To start the web host directly:
+Install the SDK selected by [global.json](../global.json), run a Docker-compatible container engine, and allow access to NuGet, Docker Hub, and Quay for the first downloads. Aspire uses the SDK's dashboard/orchestrator packages, without a separate CLI. Ensure the development HTTPS certificate is available; see [.NET development certificates](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-dev-certs).
+
+From the repository root:
+
+```sh
+dotnet restore Marmotte.ChatUi.slnx --locked-mode
+dotnet build Marmotte.ChatUi.slnx --configuration Release --no-restore
+dotnet run --project src/Marmotte.ChatUi.AppHost --configuration Release --no-build
+```
+
+Open the authenticated dashboard link printed in the terminal; its login token is private. The dashboard uses `https://localhost:17291`, OTLP uses `21291`, and the resource service uses `22291`. These launch-profile ports are local development choices, not model-server defaults.
+
+Expected resources:
+
+| Resource | Readiness and role |
+| --- | --- |
+| `postgres` | PostgreSQL connection health; a named data volume survives container removal |
+| `chatdb` | Database `marmotte_chat`, created if missing and checked for connectivity |
+| `keycloakdb` | Separate database `marmotte_identity`, created if missing and checked for connectivity |
+| `database-init` | Waits for `chatdb`, runs extension activation, then exits with code 0; an exited initializer is expected |
+| `keycloak` | Waits for `keycloakdb`, imports the realm if missing, then passes its management `/health/ready` check |
+| `web` | Waits for successful initialization and Keycloak readiness, then passes `/health` |
+
+The [web host](http://localhost:5180) and [Keycloak admin console](http://localhost:8180/admin/) are browser-reachable. No user sign-in button exists in Web yet. Ctrl+C in the AppHost terminal stops its processes and containers, retaining the database volume. Run the same command again to resume. Do not run two AppHosts against the same volume, or the standalone host and AppHost against the same web port.
+
+For UI/core work without Docker:
 
 ```sh
 dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 ```
 
-The development profile binds [http://localhost:5180](http://localhost:5180). It displays a foundation page and the existing mascot. Ctrl+C stops the host. There is no application data to retain at this stage.
+This standalone host has no database or identity connection. `/health` and `/alive` return `Healthy` in Development; no external dependency is claimed by those process checks.
 
-To start the same web host through Aspire:
+## Database lifecycle
 
-```sh
-dotnet dev-certs https --check
-dotnet run --project src/Marmotte.ChatUi.AppHost --configuration Release --no-build
+The AppHost pins `pgvector/pgvector:0.8.7-pg17-bookworm` and its multi-platform SHA-256 digest, plus `quay.io/keycloak/keycloak:26.6.4` and its digest. See [Program.cs](../src/Marmotte.ChatUi.AppHost/Program.cs) for the exact digests. Upgrades require deliberate image and volume compatibility checks; changing a tag alone does not override the digest.
+
+`marmotte-chatui-postgres-data` mounts `/var/lib/postgresql/data`, the PostgreSQL 17 data path. Both databases persist there. Keycloak uses PostgreSQL rather than an embedded database, so it needs no separate identity volume. The local POC shares the PostgreSQL administrator role across the initializer and consumers; the two databases are separate storage, not separate credential/security boundaries. Production roles and deployment are not implemented.
+
+Aspire creates missing databases on each start. A separate short-lived container then executes:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-Aspire needs a valid development HTTPS certificate. If missing or untrusted, follow the [.NET development certificate instructions](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-dev-certs) for your platform. The AppHost's HTTPS profile uses dashboard port `17291`, OTLP port `21291`, and resource-service port `22291`. Use the authenticated dashboard link printed in the terminal; do not share its login token. The web endpoint remains port `5180`. These are repository-owned development defaults, not assumed ports of model servers.
+This runs on **every AppHost start**, including existing volumes, unlike first-boot image scripts. It only affects `marmotte_chat`; no embeddings or business tables are created. Connection attempts are bounded to 15 seconds, statements to 30 seconds, and lock waits to 10 seconds. `psql` fails on SQL errors, and Web waits for its successful exit. Database schema migrations remain M5 work. The [pgvector documentation](https://github.com/pgvector/pgvector#docker) describes the upstream image and extension.
 
-Ctrl+C in the AppHost terminal stops orchestration and the child web process. Do not run the direct web host and AppHost simultaneously on the same web port. Docker is not required until container resources are introduced in M3.
+Changing a PostgreSQL major version requires a migration/export strategy; do not point a new major version at the existing volume. Deleting the volume removes **both application and identity data**. Normal shutdown and the automated checks do not delete the development volume.
 
-## Configuration and development secrets
+## Identity initialization and addresses
 
-The web host reads ordinary settings from `appsettings.json`, standard ASP.NET Core environment overrides, and command-line configuration. `Logging:LogLevel` controls diagnostics and `AllowedHosts` restricts accepted host headers to local hostnames. Launch profiles set `Development` and local addresses. Environment variables use `__` in place of `:` for nested keys, such as `Logging__LogLevel__Default`.
+[The realm source](../src/Marmotte.ChatUi.AppHost/Realms/marmotte-realm.json) creates realm `marmotte` and confidential client `marmotte-web`. Environment placeholders supply the client secret and browser origin. Authorization Code with PKCE S256 is enabled; implicit, direct-password, service-account, and public registration flows are disabled. No application users or user passwords are seeded.
 
-Both hosts have stable `UserSecretsId` values in their project files, so initialization is unnecessary. ASP.NET Core/Aspire load their respective secret stores in development. A harmless, unused example shows the syntax:
+The default authority is `http://localhost:8180/realms/marmotte`. Its discovery document advertises this browser-visible address. Redirects are restricted to `http://localhost:5180/signin-oidc`; post-logout redirects use `http://localhost:5180/signout-callback-oidc`. These are prepared for M4 and are not handled by Web yet. The realm requires TLS for external access; loopback HTTP and Keycloak `start-dev` are local development only. The AppHost explicitly opts Keycloak out of automatic HTTPS certificate termination so the authority remains identical with and without a development certificate. This uses Aspire 13.6’s experimental certificate API with a narrowly scoped warning suppression; the dashboard retains HTTPS.
+
+Keycloak's startup import skips an existing realm, preserving users and client changes. Editing the JSON, changing Web's port, or changing the configured client secret does **not** update an existing realm. Update its client URLs/secret through the authenticated admin console (and matching AppHost settings), or explicitly create a separate development volume. Do not delete existing data just to apply a configuration change. See [Keycloak import behavior](https://www.keycloak.org/server/importExport#_importing_a_realm_during_startup).
+
+The bootstrap admin is `admin`; its generated password is a secret parameter in the local Aspire dashboard. Create development users there when needed. Bootstrap credentials only create the initial administrator; changing them later is not a password reset.
+
+## Configuration and secrets
+
+AppHost generates and persists these secret parameters in its development user-secrets store on first use:
+
+| AppHost key | Consumers |
+| --- | --- |
+| `Parameters:postgres-password` | PostgreSQL, initializer, Keycloak database connection, Web database connection |
+| `Parameters:keycloak-password` | Keycloak bootstrap administrator only |
+| `Parameters:keycloak-client-secret` | Keycloak realm import and Web authentication configuration |
+
+Keep these values stable while retaining the volume. PostgreSQL's startup password setting does not change an existing database role's password. A changed/missing secret alongside an existing volume can cause authentication failures; restore the matching secret or perform an explicit password change before updating consumers.
+
+Both hosts have stable `UserSecretsId` values; stores are separate and unencrypted local development storage. Use `dotnet user-secrets set` with the AppHost project to supply an actual local value. A harmless syntax check uses an unused setting:
 
 ```sh
-dotnet user-secrets set "Development:ExampleSecret" "local-example-only" --project src/Marmotte.ChatUi.Web
-dotnet user-secrets remove "Development:ExampleSecret" --project src/Marmotte.ChatUi.Web
+dotnet user-secrets set "Development:ExampleSecret" "local-example-only" --project src/Marmotte.ChatUi.AppHost
+dotnet user-secrets remove "Development:ExampleSecret" --project src/Marmotte.ChatUi.AppHost
 ```
 
-Use the AppHost project path instead for future orchestration secrets. The two stores are separate; a secret in AppHost is not automatically forwarded to Web. No secret or API key is required in M1, and `Development:ExampleSecret` is not an application setting.
+No credentials belong in tracked JSON, launch profiles, logs, or examples. Model credentials will be separate from OIDC credentials. Ordinary AppHost overrides are:
 
-User secrets are local development storage, not encrypted production storage. Do not put credentials in `appsettings.json`, launch profiles, tracked files, logs, or example values. Future OIDC credentials and model-server credentials are distinct and will be documented with their adapters.
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `Infrastructure:WebPort` | `5180` | Published Web port and initial realm's browser origin |
+| `Infrastructure:KeycloakPort` | `8180` | Published Keycloak port and authority |
+| `Infrastructure:PostgresVolume` | `marmotte-chatui-postgres-data` | Existing or new Docker volume; overrides isolate test/checkouts |
 
-## Troubleshooting
+Ports must be distinct and within `1024..65535`. For example, pass `-- --Infrastructure:WebPort=5280 --Infrastructure:KeycloakPort=8280` to the AppHost `dotnet run` command. Apply the existing-realm URL rule above. Standalone Web uses its own launch profile instead.
 
-- SDK not found: install SDK `10.0.401` or a newer `10.0.4xx` patch; check `dotnet --info` from the repository root.
-- Restore fails: verify NuGet network access and the selected SDK. Do not use personal feeds or disable dependency auditing to hide failures. Intentional dependency changes require reviewed lock-file updates.
-- Port already in use: stop the earlier process or adjust the relevant `Properties/launchSettings.json` development addresses together.
-- Aspire certificate error: check the certificate and platform trust configuration; the standalone HTTP host remains available for M1 development.
-- Tests report a VSTest/MTP mismatch: run from the repository so `global.json` is found, and use `dotnet test --solution ...` as documented.
-- A model, database, identity, or migration setting appears to do nothing: these features are not implemented in M1. Follow the [roadmap](../roadmap.md) rather than supplying speculative configuration keys.
+AppHost injects `ConnectionStrings__chatdb`, Keycloak service-discovery endpoints, `Authentication__Authority`, `Authentication__ClientId`, and `Authentication__ClientSecret` into the **server** Web process. It does not forward the Keycloak administrator password or identity database connection. Keycloak's JDBC address uses Aspire's container-facing PostgreSQL endpoint; Web's connection uses the host-facing endpoint. No connection configuration enters Domain, Contracts, or Components.
+
+## Health and diagnostics
+
+ServiceDefaults registers service discovery for `HttpClient`, a 30-second default HTTP timeout, runtime/server/client HTTP metrics and traces, and optional OTLP export when `OTEL_EXPORTER_OTLP_ENDPOINT` is configured by Aspire. It adds no automatic retries; model generation will define its own timeouts/cancellation in its adapter. Body/custom-header capture, SQL instrumentation, exception recording in HTTP traces, and OpenTelemetry log export are not enabled. HTTP instrumentation keeps its default query-value redaction; do not disable it or include secrets/content in URL paths. Application logging must continue to avoid conversations, file contents, base64 data, and credentials.
+
+In Development, `/alive` runs only checks tagged `live`; `/health` runs all registered checks and returns 503 on failure. Responses contain only status, without diagnostic details. Polling these endpoints is excluded from HTTP traces. Web currently checks only itself: Aspire startup gates verify dependencies, while ongoing repository/OIDC dependency checks belong to their future adapters. Neither endpoint is mapped in Production. `Logging:LogLevel` controls console diagnostics; no request-body logging is configured. Treat dashboard access as privileged because it can expose resource configuration and secrets.
+
+## Model-server network topology
+
+Web runs as a host process, so a future model URL using `localhost` refers to this development computer. Use the actual model server's configured address and port; M3 makes no model request or compatibility claim. Inside a container, `localhost` refers to that container. A future containerized adapter must use an Aspire-provided endpoint or the container engine's host gateway (for example `host.docker.internal` where supported), with a server listening on a reachable interface and suitable firewall/authentication settings. A model server on another computer needs that computer's reachable address. These settings never follow the browser's location automatically. On 2026-11-26, a temporary HTTP probe on this macOS ARM64/Rancher Desktop host was reached both from a host process through loopback and from the pinned PostgreSQL image through `host.docker.internal`. This verifies that local network route, not LM Studio/Unsloth API behavior or other container engines.
+
+## Verification and troubleshooting
+
+The opt-in [infrastructure test](../tests/Marmotte.ChatUi.Infrastructure.Tests/InfrastructureTests.cs) starts the actual AppHost with random secrets, distinct ports, and a unique temporary volume. It checks readiness, separate databases, vector availability, browser-visible discovery, the confidential client/PKCE/redirects, and retained application/identity data. Restarts cover both an already-enabled extension and recovery after its removal. It disposes resources and removes only its own test volume, including after failures. Routine tests skip it; CI has a separate Docker job. See [development](development.md) for the command.
+
+- SDK/restore failure: check `dotnet --info`, NuGet access, and the pinned lock files. Do not disable auditing or locked mode to hide failures.
+- Docker unavailable: start the engine and verify `docker version` shows both client and server. Image-pull failures require access to Docker Hub/Quay. Wait for first downloads and Keycloak initialization.
+- Resource remains waiting: inspect the dependency immediately before it in the table above. `database-init` must exit successfully; check PostgreSQL credentials, extension availability, and permissions if it fails.
+- Port/certificate failure: stop the conflicting process, set the supported ports, or repair the development certificate. Dashboard/OTLP/resource-service ports are in AppHost's launch profile.
+- Keycloak redirect or issuer mismatch: use `localhost` consistently and inspect discovery/client URLs. Existing realms are not reimported; update the client explicitly after a port change.
+- Data seems missing: verify the Docker engine/context and selected volume. Do not delete a volume or regenerate secrets before locating the original data.
+- Test interruption: a force-killed test process may leave a `marmotte-infrastructure-test-*` volume. Inspect its exact name and ensure no container uses it before removing that test volume; never prune all volumes.
+- Model/identity/repository settings appear inactive in Web: these adapters are future milestones, not M3 runtime features.

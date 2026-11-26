@@ -26,3 +26,22 @@ jobs:
         run: dotnet format Marmotte.ChatUi.slnx --verify-no-changes --no-restore
       - name: Test
         run: dotnet test --solution Marmotte.ChatUi.slnx --configuration Release --no-build --no-restore
+
+  infrastructure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages*.lock.json'
+      - name: Restore locked dependencies
+        run: dotnet restore Marmotte.ChatUi.slnx --locked-mode
+      - name: Build
+        run: dotnet build Marmotte.ChatUi.slnx --configuration Release --no-restore
+      - name: Verify Docker infrastructure and restarts
+        env:
+          MARMOTTE_RUN_INFRASTRUCTURE_TESTS: '1'
+        run: dotnet test --project tests/Marmotte.ChatUi.Infrastructure.Tests --configuration Release --no-build --no-restore

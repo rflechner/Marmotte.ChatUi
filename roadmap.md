@@ -8,7 +8,7 @@ This roadmap turns the [architecture decisions](ARCHITECTURE.md) into actionable
 
 ## Starting point
 
-M1 and M2 are complete: solution foundations, the minimal Blazor/Aspire host, domain invariants, authorized conversation/settings use cases, ports, presentation contracts, tests, and CI configuration are implemented. Of the 82 tasks below, 13 are complete and 69 remain open. The chat UI, external integrations, and NuGet publication remain planned.
+M1 through M3 are complete: solution foundations, the domain and authorized use cases, and local Aspire infrastructure with persistent PostgreSQL/pgvector and Keycloak, health checks, diagnostics, tests, and CI configuration. Of the 82 tasks below, 20 are complete and 62 remain open. The chat UI, business persistence, OIDC sign-in, model integrations, and NuGet publication remain planned.
 
 ## Scope and tracking
 
@@ -82,15 +82,17 @@ M1 and M2 are complete: solution foundations, the minimal Blazor/Aspire host, do
 
 **Dependencies:** [M1](#milestone-1).
 
-- [ ] **3.1** — Declare the web application, PostgreSQL, and Keycloak resources in AppHost, with explicit dependencies and readiness checks.
-- [ ] **3.2** — Select and pin a PostgreSQL container image that includes pgvector; configure persistent volumes and separate application and Keycloak databases.
-- [ ] **3.3** — Provide an idempotent process to enable the vector extension, and verify it on both an empty database and an existing volume.
-- [ ] **3.4** — Configure reproducible Keycloak realm and client initialization, persistent identity data, and browser-reachable authority and redirect addresses.
-- [ ] **3.5** — Inject connection information and secrets into the appropriate host services; keep resource configuration out of the domain and component package.
-- [ ] **3.6** — Configure ServiceDefaults, health reporting, and useful diagnostics without logging conversation contents, file contents, or credentials.
-- [ ] **3.7** — Document and verify local startup, shutdown, restart, and troubleshooting, including host/container access to locally running model servers.
+- [x] **3.1** — Declare the web application, PostgreSQL, and Keycloak resources in AppHost, with explicit dependencies and readiness checks.
+- [x] **3.2** — Select and pin a PostgreSQL container image that includes pgvector; configure persistent volumes and separate application and Keycloak databases.
+- [x] **3.3** — Provide an idempotent process to enable the vector extension, and verify it on both an empty database and an existing volume.
+- [x] **3.4** — Configure reproducible Keycloak realm and client initialization, persistent identity data, and browser-reachable authority and redirect addresses.
+- [x] **3.5** — Inject connection information and secrets into the appropriate host services; keep resource configuration out of the domain and component package.
+- [x] **3.6** — Configure ServiceDefaults, health reporting, and useful diagnostics without logging conversation contents, file contents, or credentials.
+- [x] **3.7** — Document and verify local startup, shutdown, restart, and troubleshooting, including host/container access to locally running model servers.
 
 **Exit criterion:** Aspire starts the required resources, reports their readiness, retains data across restarts, and makes the vector extension available in the application database.
+
+**Validation (2026-11-26):** On macOS ARM64 with SDK 10.0.401 and Docker via Rancher Desktop, locked restore, Release build (zero warnings/errors), formatting/analyzers, 57 routine tests, and the opt-in Docker integration test pass. The actual AppHost with its dashboard starts three times on the same isolated volume: fresh initialization, idempotent restart, then repair after vector removal, preserving SQL probe data and a Keycloak user. Checks cover separate databases, vector 0.8.7, readiness, the browser-visible issuer, and confidential client/PKCE/redirect settings. Normal dashboard startup and Ctrl+C shutdown were also checked on the development volume. A temporary local HTTP probe confirmed host-loopback and container-to-host gateway access on Rancher Desktop. Both language versions and local links were reviewed. Seven platform-specific lock-file pairs are regenerated; runtime validation is limited to macOS ARM64. The Docker CI job is configured but no GitHub Actions run is claimed. OIDC sign-in, business migrations/repositories, and model compatibility remain for later milestones. See [operations](docs/operations.md) and [development](docs/development.md).
 
 <a id="milestone-4"></a>
 

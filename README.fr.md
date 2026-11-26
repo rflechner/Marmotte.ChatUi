@@ -13,7 +13,7 @@ Une application de chat en .NET et Blazor, et des composants réutilisables pour
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="La mascotte marmotte avec une pancarte Experimental Proof of Concept" width="320" />
 
-Les milestones 1 et 2 sont implémentés : le socle .NET 10/Blazor/Aspire, le modèle métier, les cas d’usage autorisés des conversations et paramètres, les ports indépendants des fournisseurs, les contrats de présentation et les tests automatisés. Le cœur fonctionne avec des adaptateurs de test ; Web affiche toujours la page du socle. La persistance réelle, les adaptateurs d’identité/modèles, les composants de chat réutilisables et le comportement de ServiceDefaults restent pour les milestones suivants. Aucun package NuGet n’est publié.
+Les milestones 1 à 3 sont implémentés : le socle .NET 10/Blazor, le domaine et les cas d’usage autorisés, et l’infrastructure locale Aspire avec PostgreSQL/pgvector, l’initialisation persistante de Keycloak, les contrôles de santé et la télémétrie. Web affiche encore la page du socle ; la persistance métier, la connexion OIDC, les adaptateurs de modèles et les composants de chat réutilisables restent pour les milestones suivants. Aucun package NuGet n’est publié.
 
 ## Direction du produit
 
@@ -35,7 +35,7 @@ Les milestones 1 et 2 sont implémentés : le socle .NET 10/Blazor/Aspire, le mo
 
 ## Compiler et démarrer
 
-Installer le SDK .NET sélectionné par [global.json](global.json) : `10.0.401` ou un correctif ultérieur de la même bande `10.0.4xx`. La première restauration nécessite un accès à NuGet. Docker, un serveur de modèles et des identifiants ne sont pas nécessaires pour M1/M2.
+Installer le SDK .NET sélectionné par [global.json](global.json) : `10.0.401` ou un correctif ultérieur de la même bande `10.0.4xx`. La première restauration nécessite un accès à NuGet. L’hôte autonome et les tests courants ne nécessitent ni Docker ni identifiants de modèles. L’infrastructure M3 complète nécessite un moteur compatible Docker démarré.
 
 Depuis la racine du dépôt :
 
@@ -48,5 +48,13 @@ dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 ```
 
 Ouvrir [l’hôte local](http://localhost:5180). La page affiche l’état du projet et la mascotte ; elle ne propose pas encore de chat. L’arrêter avec Ctrl+C.
+
+Pour démarrer l’infrastructure M3 avec Docker actif :
+
+```sh
+dotnet run --project src/Marmotte.ChatUi.AppHost --configuration Release --no-build
+```
+
+Aspire démarre PostgreSQL, l’initialisation pgvector, Keycloak et Web. Ouvrir son lien authentifié de tableau de bord ; les données de base et d’identité survivent à Ctrl+C et au redémarrage. Consulter [l’exploitation](docs/operations.fr.md) pour les ports, secrets et volumes existants.
 
 Consulter le [guide de développement](docs/development.fr.md) pour les versions, conventions et tests ; [l’exploitation](docs/operations.fr.md) pour le démarrage Aspire et les secrets de développement ; et [l’intégration](docs/integration.fr.md) pour les frontières des composants et les choix de rendu.

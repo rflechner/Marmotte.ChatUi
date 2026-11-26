@@ -1,0 +1,32 @@
+{
+  "realm": "marmotte",
+  "displayName": "Marmotte.ChatUi",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "clients": [
+    {
+      "clientId": "marmotte-web",
+      "name": "Marmotte.ChatUi Web",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${MARMOTTE_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "${MARMOTTE_WEB_ORIGIN}",
+      "baseUrl": "${MARMOTTE_WEB_ORIGIN}/",
+      "redirectUris": ["${MARMOTTE_WEB_ORIGIN}/signin-oidc"],
+      "webOrigins": ["${MARMOTTE_WEB_ORIGIN}"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${MARMOTTE_WEB_ORIGIN}/signout-callback-oidc"
+      },
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"]
+    }
+  ]
+}

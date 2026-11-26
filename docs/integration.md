@@ -2,9 +2,9 @@
 
 English | [Français](integration.fr.md)
 
-## What exists in M1/M2
+## What exists in M1–M3
 
-`Marmotte.ChatUi.Components` is a `net10.0` Razor Class Library referencing `Marmotte.ChatUi.Contracts` and `Microsoft.AspNetCore.Components.Web`. It has no public chat components yet. Contracts now provides `IConversationService`, `IConnectionProfileService`, `IUserPreferencesService`, DTOs, generation updates, and safe errors; see the [core API reference](core.md). Consumers supply these services without importing Application or server adapters. Its package graph is checked for independence from PostgreSQL, Keycloak, Aspire, and OpenAI adapters. The web project already references the RCL, but currently renders its own foundation page.
+`Marmotte.ChatUi.Components` is a `net10.0` Razor Class Library referencing `Marmotte.ChatUi.Contracts` and `Microsoft.AspNetCore.Components.Web`. It has no public chat components yet. Contracts now provides `IConversationService`, `IConnectionProfileService`, `IUserPreferencesService`, DTOs, generation updates, and safe errors; see the [core API reference](core.md). Consumers supply these services without importing Application or server adapters. Its package graph is checked for independence from PostgreSQL, Keycloak, Aspire, and OpenAI adapters. The web project already references the RCL, but currently renders its own foundation page. M3 adds infrastructure and ServiceDefaults only to the full application host; component consumers acquire no new server dependencies.
 
 There is no published NuGet package or supported installation command. All projects are currently non-packable; package identity, metadata, delivery of Contracts, and external consumption checks belong to M10. M7 will add actual component examples, parameters, callbacks, templates, states, accessibility guidance, and theme customization APIs.
 
