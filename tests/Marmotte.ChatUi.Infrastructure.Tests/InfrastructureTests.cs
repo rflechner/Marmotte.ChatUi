@@ -33,11 +33,18 @@ public sealed class InfrastructureTests
             keycloakPort = GetAvailablePort();
         }
 
+        var pgAdminPort = GetAvailablePort();
+        while (pgAdminPort == webPort || pgAdminPort == keycloakPort)
+        {
+            pgAdminPort = GetAvailablePort();
+        }
+
         string[] arguments =
         [
             $"--Infrastructure:PostgresVolume={volumeName}",
             $"--Infrastructure:WebPort={webPort.ToString(CultureInfo.InvariantCulture)}",
             $"--Infrastructure:KeycloakPort={keycloakPort.ToString(CultureInfo.InvariantCulture)}",
+            $"--Infrastructure:PgAdminPort={pgAdminPort.ToString(CultureInfo.InvariantCulture)}",
             $"--Parameters:postgres-password={password}",
             $"--Parameters:keycloak-password={password}",
             $"--Parameters:keycloak-client-secret={password}",
@@ -57,6 +64,12 @@ public sealed class InfrastructureTests
                 using var web = app.CreateHttpClient("web", "http");
                 using var health = await web.GetAsync("/health", cancellationToken);
                 Assert.Equal(HttpStatusCode.OK, health.StatusCode);
+
+                await app.ResourceNotifications.WaitForResourceHealthyAsync("pgadmin", cancellationToken);
+                using var pgAdmin = app.CreateHttpClient("pgadmin", "http");
+                using var pgAdminResponse = await pgAdmin.GetAsync("/browser/", cancellationToken);
+                Assert.Equal(HttpStatusCode.OK, pgAdminResponse.StatusCode);
+                Assert.Contains("pgAdmin", await pgAdminResponse.Content.ReadAsStringAsync(cancellationToken), StringComparison.Ordinal);
 
                 await using var chat = new NpgsqlConnection(await app.GetConnectionStringAsync("chatdb", cancellationToken));
                 await chat.OpenAsync(cancellationToken);

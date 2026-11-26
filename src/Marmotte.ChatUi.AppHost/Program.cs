@@ -6,7 +6,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var webPort = builder.Configuration.GetValue("Infrastructure:WebPort", 5180);
 var keycloakPort = builder.Configuration.GetValue("Infrastructure:KeycloakPort", 8180);
-if (webPort is < 1024 or > 65535 || keycloakPort is < 1024 or > 65535 || webPort == keycloakPort)
+var pgAdminPort = builder.Configuration.GetValue("Infrastructure:PgAdminPort", 5050);
+int[] servicePorts = [webPort, keycloakPort, pgAdminPort];
+if (servicePorts.Any(port => port is < 1024 or > 65535) || servicePorts.Distinct().Count() != servicePorts.Length)
 {
     throw new InvalidOperationException("Infrastructure ports must be distinct and between 1024 and 65535.");
 }
@@ -22,6 +24,12 @@ var postgres = builder.AddPostgres("postgres")
     .WithImageSHA256(postgresDigest)
     // pgvector's tag does not begin with the PostgreSQL major version; specify the PG17 path.
     .WithVolume(builder.Configuration["Infrastructure:PostgresVolume"] ?? "marmotte-chatui-postgres-data", "/var/lib/postgresql/data");
+
+postgres.WithPgAdmin(pgAdmin => pgAdmin
+    .WithImageTag("9.15.0")
+    .WithImageSHA256("cefc4cc6b7d9d71a9e81e76fb9d7e14038ab5661b539a190eea1b63fa612589a")
+    .WithHostPort(pgAdminPort)
+    .WaitFor(postgres));
 
 var chatDatabase = postgres.AddDatabase("chatdb", "marmotte_chat");
 var identityDatabase = postgres.AddDatabase("keycloakdb", "marmotte_identity");

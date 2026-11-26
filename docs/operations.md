@@ -25,6 +25,7 @@ Expected resources:
 | Resource | Readiness and role |
 | --- | --- |
 | `postgres` | PostgreSQL connection health; a named data volume survives container removal |
+| `pgadmin` | Local web administration, preconfigured for `postgres`; waits for PostgreSQL and checks `/browser` |
 | `chatdb` | Database `marmotte_chat`, created if missing and checked for connectivity |
 | `keycloakdb` | Separate database `marmotte_identity`, created if missing and checked for connectivity |
 | `database-init` | Waits for `chatdb`, runs extension activation, then exits with code 0; an exited initializer is expected |
@@ -40,6 +41,18 @@ dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 ```
 
 This standalone host has no database or identity connection. `/health` and `/alive` return `Healthy` in Development; no external dependency is claimed by those process checks.
+
+## pgAdmin in the browser
+
+Open [pgAdmin](http://localhost:5050) after starting AppHost, or select the `pgadmin` endpoint in the Aspire dashboard. Expand `postgres`, then `Databases`, to inspect `marmotte_chat` and `marmotte_identity`. Aspire registers the server and supplies its existing PostgreSQL credentials automatically; no manual connection setup is needed.
+
+This uses Aspire's local single-user configuration, with no separate pgAdmin login or master-password prompt. The web interface grants database administrator access and is intended for local development only. It is independent of Web/Keycloak sign-in and does not block Web readiness. pgAdmin session/preferences are ephemeral; PostgreSQL data remains in the existing persistent volume. Server registration is recreated on each start. The pgAdmin resource is excluded from Aspire deployment manifests.
+
+The image is pinned to `dpage/pgadmin4:9.15.0` (the version selected by Aspire 13.6.5) and its multi-platform SHA-256 digest. No new NuGet dependency is required. Change `Infrastructure:PgAdminPort` if port `5050` is occupied; it must differ from Web and Keycloak ports. For example:
+
+```sh
+dotnet run --project src/Marmotte.ChatUi.AppHost --configuration Release --no-build -- --Infrastructure:PgAdminPort=5150
+```
 
 ## Database lifecycle
 
@@ -92,6 +105,7 @@ No credentials belong in tracked JSON, launch profiles, logs, or examples. Model
 | --- | --- | --- |
 | `Infrastructure:WebPort` | `5180` | Published Web port and initial realm's browser origin |
 | `Infrastructure:KeycloakPort` | `8180` | Published Keycloak port and authority |
+| `Infrastructure:PgAdminPort` | `5050` | Published local pgAdmin web port |
 | `Infrastructure:PostgresVolume` | `marmotte-chatui-postgres-data` | Existing or new Docker volume; overrides isolate test/checkouts |
 
 Ports must be distinct and within `1024..65535`. For example, pass `-- --Infrastructure:WebPort=5280 --Infrastructure:KeycloakPort=8280` to the AppHost `dotnet run` command. Apply the existing-realm URL rule above. Standalone Web uses its own launch profile instead.
@@ -110,7 +124,7 @@ Web runs as a host process, so a future model URL using `localhost` refers to th
 
 ## Verification and troubleshooting
 
-The opt-in [infrastructure test](../tests/Marmotte.ChatUi.Infrastructure.Tests/InfrastructureTests.cs) starts the actual AppHost with random secrets, distinct ports, and a unique temporary volume. It checks readiness, separate databases, vector availability, browser-visible discovery, the confidential client/PKCE/redirects, and retained application/identity data. Restarts cover both an already-enabled extension and recovery after its removal. It disposes resources and removes only its own test volume, including after failures. Routine tests skip it; CI has a separate Docker job. See [development](development.md) for the command.
+The opt-in [infrastructure test](../tests/Marmotte.ChatUi.Infrastructure.Tests/InfrastructureTests.cs) starts the actual AppHost with random secrets, distinct ports, and a unique temporary volume. It checks readiness, the pgAdmin web interface, separate databases, vector availability, browser-visible discovery, the confidential client/PKCE/redirects, and retained application/identity data. Restarts cover both an already-enabled extension and recovery after its removal. It disposes resources and removes only its own test volume, including after failures. Routine tests skip it; CI has a separate Docker job. See [development](development.md) for the command.
 
 - SDK/restore failure: check `dotnet --info`, NuGet access, and the pinned lock files. Do not disable auditing or locked mode to hide failures.
 - Docker unavailable: start the engine and verify `docker version` shows both client and server. Image-pull failures require access to Docker Hub/Quay. Wait for first downloads and Keycloak initialization.

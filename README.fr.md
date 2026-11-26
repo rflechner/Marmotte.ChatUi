@@ -55,6 +55,6 @@ Pour démarrer l’infrastructure M3 avec Docker actif :
 dotnet run --project src/Marmotte.ChatUi.AppHost --configuration Release --no-build
 ```
 
-Aspire démarre PostgreSQL, l’initialisation pgvector, Keycloak et Web. Ouvrir son lien authentifié de tableau de bord ; les données de base et d’identité survivent à Ctrl+C et au redémarrage. Consulter [l’exploitation](docs/operations.fr.md) pour les ports, secrets et volumes existants.
+Aspire démarre PostgreSQL, l’initialisation pgvector, Keycloak, Web et [pgAdmin dans le navigateur](http://localhost:5050), préconfiguré pour PostgreSQL. Ouvrir son lien authentifié de tableau de bord ; les données de base et d’identité survivent à Ctrl+C et au redémarrage. Consulter [l’exploitation](docs/operations.fr.md) pour les ports, secrets et volumes existants.
 
 Consulter le [guide de développement](docs/development.fr.md) pour les versions, conventions et tests ; [l’exploitation](docs/operations.fr.md) pour le démarrage Aspire et les secrets de développement ; et [l’intégration](docs/integration.fr.md) pour les frontières des composants et les choix de rendu.

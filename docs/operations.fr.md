@@ -25,6 +25,7 @@ Ressources attendues :
 | Ressource | Disponibilité et rôle |
 | --- | --- |
 | `postgres` | Santé de la connexion PostgreSQL ; un volume nommé survit à la suppression des conteneurs |
+| `pgadmin` | Administration web locale, préconfigurée pour `postgres` ; attend PostgreSQL et contrôle `/browser` |
 | `chatdb` | Base `marmotte_chat`, créée si absente et contrôlée par connexion |
 | `keycloakdb` | Base distincte `marmotte_identity`, créée si absente et contrôlée par connexion |
 | `database-init` | Attend `chatdb`, active l’extension puis termine avec le code 0 ; cet arrêt de l’initialiseur est attendu |
@@ -40,6 +41,18 @@ dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 ```
 
 Cet hôte autonome n’a pas de connexion à une base ou à l’identité. `/health` et `/alive` renvoient `Healthy` en Development ; ces contrôles de processus ne revendiquent aucune dépendance externe.
+
+## pgAdmin dans le navigateur
+
+Ouvrir [pgAdmin](http://localhost:5050) après le démarrage de l’AppHost, ou sélectionner l’endpoint `pgadmin` dans le tableau de bord Aspire. Déplier `postgres`, puis `Databases`, pour consulter `marmotte_chat` et `marmotte_identity`. Aspire enregistre le serveur et fournit automatiquement ses identifiants PostgreSQL existants ; aucune configuration manuelle de connexion n’est nécessaire.
+
+Cette intégration utilise la configuration locale mono-utilisateur d’Aspire, sans connexion pgAdmin séparée ni demande de mot de passe maître. L’interface web donne un accès administrateur aux bases et est destinée uniquement au développement local. Elle est indépendante de la connexion Web/Keycloak et ne bloque pas la disponibilité de Web. La session et les préférences pgAdmin sont éphémères ; les données PostgreSQL restent dans le volume persistant existant. L’enregistrement du serveur est recréé à chaque démarrage. La ressource pgAdmin est exclue des manifestes de déploiement Aspire.
+
+L’image est fixée à `dpage/pgadmin4:9.15.0` (version retenue par Aspire 13.6.5) et à son empreinte SHA-256 multiplateforme. Aucune nouvelle dépendance NuGet n’est nécessaire. Modifier `Infrastructure:PgAdminPort` si le port `5050` est occupé ; il doit être distinct des ports Web et Keycloak. Par exemple :
+
+```sh
+dotnet run --project src/Marmotte.ChatUi.AppHost --configuration Release --no-build -- --Infrastructure:PgAdminPort=5150
+```
 
 ## Cycle de vie des bases
 
@@ -92,6 +105,7 @@ Aucun identifiant d’accès ne doit figurer dans les JSON versionnés, profils 
 | --- | --- | --- |
 | `Infrastructure:WebPort` | `5180` | Port Web publié et origine navigateur du realm initial |
 | `Infrastructure:KeycloakPort` | `8180` | Port Keycloak publié et autorité |
+| `Infrastructure:PgAdminPort` | `5050` | Port web local publié de pgAdmin |
 | `Infrastructure:PostgresVolume` | `marmotte-chatui-postgres-data` | Volume Docker existant ou nouveau ; permet d’isoler les tests/copies du dépôt |
 
 Les ports doivent être distincts et compris dans `1024..65535`. Par exemple, passer `-- --Infrastructure:WebPort=5280 --Infrastructure:KeycloakPort=8280` à la commande `dotnet run` de l’AppHost. Appliquer la règle de mise à jour des URL d’un realm existant ci-dessus. Web autonome utilise son propre profil de lancement.
@@ -110,7 +124,7 @@ Web est un processus de l’hôte ; une future URL de modèle utilisant `localho
 
 ## Vérification et diagnostic
 
-Le [test d’infrastructure](../tests/Marmotte.ChatUi.Infrastructure.Tests/InfrastructureTests.cs), activé explicitement, démarre le véritable AppHost avec des secrets aléatoires, des ports distincts et un volume temporaire unique. Il contrôle la disponibilité, les bases séparées, vector, la découverte visible au navigateur, le client confidentiel/PKCE/les redirections et la conservation des données applicatives/d’identité. Les redémarrages couvrent une extension déjà activée et sa réparation après suppression. Il libère les ressources et supprime seulement son propre volume, y compris après un échec. Les tests courants l’ignorent ; la CI possède un job Docker séparé. Consulter le [développement](development.fr.md) pour la commande.
+Le [test d’infrastructure](../tests/Marmotte.ChatUi.Infrastructure.Tests/InfrastructureTests.cs), activé explicitement, démarre le véritable AppHost avec des secrets aléatoires, des ports distincts et un volume temporaire unique. Il contrôle la disponibilité, l’interface web pgAdmin, les bases séparées, vector, la découverte visible au navigateur, le client confidentiel/PKCE/les redirections et la conservation des données applicatives/d’identité. Les redémarrages couvrent une extension déjà activée et sa réparation après suppression. Il libère les ressources et supprime seulement son propre volume, y compris après un échec. Les tests courants l’ignorent ; la CI possède un job Docker séparé. Consulter le [développement](development.fr.md) pour la commande.
 
 - Échec SDK/restauration : contrôler `dotnet --info`, l’accès NuGet et les fichiers de verrouillage. Ne pas désactiver l’audit ou le mode verrouillé pour masquer un échec.
 - Docker indisponible : démarrer le moteur et vérifier que `docker version` affiche client et serveur. Les téléchargements d’images nécessitent l’accès à Docker Hub/Quay. Attendre les premiers téléchargements et l’initialisation de Keycloak.
