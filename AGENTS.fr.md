@@ -63,6 +63,8 @@ Ajouter un lien vers l’autre langue près du début de chaque document. Les li
 
 Documenter les choix, leurs raisons, les invariants et les limites. Les commentaires expliquent une intention ou une contrainte ; ils ne reformulent pas chaque ligne de code.
 
+Documenter chaque type C# déclaré explicitement avec un résumé de documentation XML expliquant sa responsabilité, quelle que soit son accessibilité. Cela inclut les types `private` et `internal`, les types imbriqués et les utilitaires de test. Pour les utilitaires non publics, documenter aussi les préconditions, résultats, erreurs et effets de bord pertinents afin que leur contrat reste compréhensible pour les personnes qui maintiennent le code.
+
 Documenter les API publiques réutilisables : rôle, paramètres, valeurs de retour, erreurs, annulation, ownership et durée de vie si ces notions s’appliquent. Pour les composants Blazor, décrire paramètres, événements, templates, états, accessibilité et exemples d’intégration.
 
 Maintenir les documents suivants au fil du code :

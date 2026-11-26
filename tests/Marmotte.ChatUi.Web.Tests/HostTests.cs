@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Marmotte.ChatUi.Web.Tests;
 
+/// <summary>Verifies the minimal web host's prerendering, interactivity markers, static assets, and missing-route behavior.</summary>
 public sealed class HostTests
 {
     [Fact]
@@ -47,6 +48,8 @@ public sealed class HostTests
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    /// <summary>Creates a development host with ephemeral data protection so tests do not read or write persistent key material.</summary>
+    /// <returns>A host factory that the calling test must dispose asynchronously.</returns>
     private static WebApplicationFactory<Program> CreateFactory()
     {
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>

@@ -3,6 +3,7 @@ using System.Xml.Linq;
 
 namespace Marmotte.ChatUi.Architecture.Tests;
 
+/// <summary>Verifies project dependency boundaries and keeps infrastructure packages out of the core and component library.</summary>
 public sealed class DependencyTests
 {
     private static readonly string RepositoryRoot = FindRepositoryRoot();
@@ -104,17 +105,22 @@ public sealed class DependencyTests
         }
     }
 
+    /// <summary>Resolves a source project by its assembly suffix using the repository's established directory layout.</summary>
     private static string GetProjectPath(string name)
     {
         return Path.Combine(RepositoryRoot, "src", $"Marmotte.ChatUi.{name}", $"Marmotte.ChatUi.{name}.csproj");
     }
 
+    /// <summary>Reads a source project's committed dependency graph for architectural checks.</summary>
+    /// <returns>A JSON document that the calling test must dispose.</returns>
     private static JsonDocument LoadLockFile(string name)
     {
         var path = Path.Combine(Path.GetDirectoryName(GetProjectPath(name))!, "packages.lock.json");
         return JsonDocument.Parse(File.ReadAllText(path));
     }
 
+    /// <summary>Locates the checkout from the test output directory so checks do not depend on the process working directory.</summary>
+    /// <exception cref="DirectoryNotFoundException">No ancestor contains the solution file.</exception>
     private static string FindRepositoryRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)

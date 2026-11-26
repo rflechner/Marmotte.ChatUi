@@ -63,6 +63,8 @@ Add a link to the other language near the top of each document. Local links to o
 
 Document decisions, their reasons, invariants, and limitations. Comments explain an intention or constraint; they do not restate every line of code.
 
+Document every explicitly declared C# type with an XML documentation summary explaining its responsibility, regardless of accessibility. This includes `private` and `internal` types, nested types, and test helpers. For non-public helpers, also document relevant preconditions, results, errors, and side effects so their contracts remain understandable to maintainers.
+
 Document reusable public APIs: purpose, parameters, return values, errors, cancellation, ownership, and lifetimes where relevant. For Blazor components, describe parameters, events, templates, states, accessibility, and integration examples.
 
 Maintain the following documents alongside the code:

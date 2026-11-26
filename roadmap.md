@@ -8,7 +8,7 @@ This roadmap turns the [architecture decisions](ARCHITECTURE.md) into actionable
 
 ## Starting point
 
-M1 is complete: the solution foundations, minimal Blazor/Aspire host, initial tests, and CI configuration are implemented. Of the 82 tasks below, 6 are complete and 76 remain open. The chat features, external integrations, and NuGet publication remain planned.
+M1 and M2 are complete: solution foundations, the minimal Blazor/Aspire host, domain invariants, authorized conversation/settings use cases, ports, presentation contracts, tests, and CI configuration are implemented. Of the 82 tasks below, 13 are complete and 69 remain open. The chat UI, external integrations, and NuGet publication remain planned.
 
 ## Scope and tracking
 
@@ -62,15 +62,17 @@ M1 is complete: the solution foundations, minimal Blazor/Aspire host, initial te
 
 **Dependencies:** [M1](#milestone-1).
 
-- [ ] **2.1** — Refine the vocabulary and aggregate boundaries for Conversation, Message, Attachment, ConnectionProfile, and UserPreferences.
-- [ ] **2.2** — Define identifiers, ownership, message ordering, timestamps, and the invariants required to create and resume a conversation.
-- [ ] **2.3** — Specify message generation states, including streaming, completion, cancellation, and failure, with rules for partial responses and duplicate submissions.
-- [ ] **2.4** — Define focused ports for conversation repositories, preferences, connection profiles, current identity, model capabilities, and response generation; keep provider types out of their signatures.
-- [ ] **2.5** — Implement the initial use cases for creating, listing, loading, and deleting conversations, recording messages, and managing preferences and profiles, with explicit authorization boundaries.
-- [ ] **2.6** — Define the presentation contracts exposed to the component library, including streaming updates, errors, cancellation, and attachment metadata.
-- [ ] **2.7** — Test business invariants, ownership checks, paging, and message lifecycle behavior through the application contracts.
+- [x] **2.1** — Refine the vocabulary and aggregate boundaries for Conversation, Message, Attachment, ConnectionProfile, and UserPreferences.
+- [x] **2.2** — Define identifiers, ownership, message ordering, timestamps, and the invariants required to create and resume a conversation.
+- [x] **2.3** — Specify message generation states, including streaming, completion, cancellation, and failure, with rules for partial responses and duplicate submissions.
+- [x] **2.4** — Define focused ports for conversation repositories, preferences, connection profiles, current identity, model capabilities, and response generation; keep provider types out of their signatures.
+- [x] **2.5** — Implement the initial use cases for creating, listing, loading, and deleting conversations, recording messages, and managing preferences and profiles, with explicit authorization boundaries.
+- [x] **2.6** — Define the presentation contracts exposed to the component library, including streaming updates, errors, cancellation, and attachment metadata.
+- [x] **2.7** — Test business invariants, ownership checks, paging, and message lifecycle behavior through the application contracts.
 
 **Exit criterion:** Core use cases and invariants can be exercised with test adapters, without Blazor, PostgreSQL, Keycloak, or the OpenAI SDK.
+
+**Validation (2026-11-25):** On macOS ARM64 with SDK 10.0.401, locked restore, Release build (zero warnings/errors), formatting/analyzers, and all 51 tests pass, including 33 new core tests. Tests exercise ownership, paging, immutable/restored history, lifecycle and partial responses, duplicate submissions, concurrent writes, settings, and cancellation with test adapters. English/French pairs and local links were checked. No database, identity-provider, model-server, browser-chat, or NuGet validation is claimed. See the [core reference](docs/core.md) for API guarantees and remaining limitations.
 
 <a id="milestone-3"></a>
 

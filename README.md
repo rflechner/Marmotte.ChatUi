@@ -13,7 +13,7 @@ A .NET and Blazor chat application, with reusable components for embedding conve
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="The marmot mascot holding an Experimental Proof of Concept sign" width="320" />
 
-Milestone 1 is implemented: a .NET 10 solution with nine source projects, a minimal Blazor host using server interactivity, an Aspire AppHost that starts the web host, architecture and host tests, and CI configuration. The domain, application contracts, adapters, reusable chat components, and ServiceDefaults behavior remain for later milestones. No NuGet package has been published.
+Milestones 1 and 2 are implemented: the .NET 10/Blazor/Aspire foundations, the domain model, authorized conversation and settings use cases, provider-neutral ports, presentation contracts, and automated tests. The core runs with test adapters; Web still displays the foundation page. Real persistence, identity/model adapters, reusable chat components, and ServiceDefaults behavior remain for later milestones. No NuGet package has been published.
 
 ## Product direction
 
@@ -29,12 +29,13 @@ Milestone 1 is implemented: a .NET 10 solution with nine source projects, a mini
 
 - [Roadmap and numbered milestones](roadmap.md)
 - [Architecture and scope](ARCHITECTURE.md)
+- [Domain model, ports, and use cases](docs/core.md)
 - [Contribution guidelines](AGENTS.md)
 - [Mascot and image provenance](docs/images/README.md)
 
 ## Build and run
 
-Install the .NET SDK selected by [global.json](global.json): `10.0.401` or a newer patch in the same `10.0.4xx` feature band. NuGet access is required for the first restore. Docker, a model server, and credentials are not required for M1.
+Install the .NET SDK selected by [global.json](global.json): `10.0.401` or a newer patch in the same `10.0.4xx` feature band. NuGet access is required for the first restore. Docker, a model server, and credentials are not required for M1/M2.
 
 Run from the repository root:
 

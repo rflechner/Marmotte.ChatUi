@@ -4,7 +4,7 @@ English | [Français](ARCHITECTURE.fr.md)
 
 ## Status and purpose
 
-This document distinguishes the implemented M1 foundations from the target product architecture. The nine source projects, a minimal Interactive Server Blazor host, a web-only Aspire AppHost, and initial automated checks now exist. Business behavior, integrations, reusable chat components, and NuGet publication remain planned.
+This document distinguishes the implemented M1/M2 core from the target product architecture. The nine source projects, a minimal Interactive Server Blazor host, a web-only Aspire AppHost, domain invariants, authorized conversation/settings use cases, ports, and automated checks now exist. Infrastructure integrations, reusable chat components, and NuGet publication remain planned; Web is not yet wired to the core.
 
 Marmotte.ChatUi serves two purposes: a .NET and Blazor chat application inspired by AnythingLLM and Open WebUI, and a library of components and widgets that can be embedded in other applications. The complete application will use the same components distributed through NuGet.
 
@@ -35,7 +35,7 @@ Important boundaries correspond to separate assemblies. The initial design is a 
 
 ### Target structure
 
-All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, Application, the two adapters, Components, and ServiceDefaults currently establish assembly boundaries without implementing their future APIs. Web references ServiceDefaults in addition to the dependencies listed below.
+All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, and Application implement M2. The two adapters, Components, and ServiceDefaults still establish boundaries without their future implementations. Web references ServiceDefaults in addition to the dependencies listed below.
 
 | Project / assembly | Responsibility | Main internal dependencies |
 | --- | --- | --- |
@@ -69,13 +69,13 @@ Arrows represent code dependencies. At runtime, use cases call adapters through 
 
 ## Domain model and contracts
 
-The initial vocabulary includes Conversation, Message, Attachment, ConnectionProfile, and UserPreferences. Names and aggregate boundaries will be refined from the use cases; they do not yet constitute a database schema.
+M2 implements `Conversation` as an immutable aggregate owning ordered user/assistant message pairs and generation state. `Attachment` holds separately owned metadata; `ConnectionProfile` and `UserPreferences` are separate owned settings snapshots. GUIDs, UTC timestamps, revision checks, duplicate submission rules, and restoration validation preserve history. This is not yet a database schema.
 
-A conversation belongs to a user. Its messages retain their role, content, order, and metadata needed to resume the conversation history. Attachments are referenced by identifier and metadata instead of always loading their contents into memory whenever history is read.
+The application exposes authorized creation, paging, loading, deletion, text submission, response recording/cancellation, and settings management. Current identity and repositories are ports; every operation derives ownership from trusted server identity and verifies returned owners. Profile secrets are absent from these contracts.
 
-Application ports cover concrete needs: loading and saving conversations, preferences, and profiles; generating responses; model capabilities; current identity; attachment storage; and multimodal content preparation.
+Conversation writes compare revisions and atomically commit messages and attachment references. Lists are bounded and ordered; full conversation loading currently materializes the whole history. Repository contracts expose no database types. Provider ports define capabilities and response streams, with no concrete model call or orchestrator yet. Binary storage and multimodal preparation ports remain for M9/M11.
 
-Repositories expose focused, paginated business operations. They do not expose IQueryable, DbContext, NpgsqlConnection, or pgvector-specific types. Persistence operations must define consistency between a message and its attachment references.
+See the [core reference](docs/core.md) for invariants, transitions, public APIs, cancellation, consistency, lifetimes, and limitations. Test adapters exercise this behavior without infrastructure; PostgreSQL guarantees and real user authentication remain to be verified in M4/M5.
 
 ## Blazor components and NuGet distribution
 

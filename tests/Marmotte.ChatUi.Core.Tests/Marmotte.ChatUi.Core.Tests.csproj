@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marmotte.ChatUi.Application/Marmotte.ChatUi.Application.csproj" />
+  </ItemGroup>
+</Project>

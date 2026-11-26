@@ -1,4 +1,28 @@
 <Solution>
+  <Folder Name="/.solution/">
+    <File Path="AGENTS.fr.md" />
+    <File Path="ARCHITECTURE.fr.md" />
+    <File Path="ARCHITECTURE.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="NuGet.Config" />
+    <File Path="README.fr.md" />
+    <File Path="README.md" />
+    <File Path="roadmap.fr.md" />
+    <File Path="roadmap.md" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs\core.fr.md" />
+    <File Path="docs\core.md" />
+    <File Path="docs\development.fr.md" />
+    <File Path="docs\development.md" />
+    <File Path="docs\integration.fr.md" />
+    <File Path="docs\integration.md" />
+    <File Path="docs\operations.fr.md" />
+    <File Path="docs\operations.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Marmotte.ChatUi.Domain/Marmotte.ChatUi.Domain.csproj" />
     <Project Path="src/Marmotte.ChatUi.Contracts/Marmotte.ChatUi.Contracts.csproj" />
@@ -11,6 +35,7 @@
     <Project Path="src/Marmotte.ChatUi.ServiceDefaults/Marmotte.ChatUi.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Marmotte.ChatUi.Core.Tests/Marmotte.ChatUi.Core.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Architecture.Tests/Marmotte.ChatUi.Architecture.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Web.Tests/Marmotte.ChatUi.Web.Tests.csproj" />
   </Folder>

@@ -4,7 +4,7 @@ English | [Français](operations.fr.md)
 
 ## Current scope
 
-M1 provides a local web host and an Aspire AppHost containing only the `web` resource. No database, identity provider, model connection, migration, attachment store, or health/telemetry setup is implemented yet. ServiceDefaults is an empty assembly reserved for M3. No production deployment is configured.
+M1 provides a local web host and an Aspire AppHost containing only the `web` resource. No database, identity provider, model connection, migration, attachment store, or health/telemetry setup is implemented yet. ServiceDefaults is an empty assembly reserved for M3. No production deployment is configured. M2 adds core use cases and test adapters only; Web does not register them, and there are no new runtime configuration keys. Connection-profile validation and the separation of settings from future credential storage are described in the [core reference](core.md).
 
 ## Start and stop
 

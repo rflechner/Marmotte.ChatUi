@@ -32,7 +32,9 @@ L’option `--solution` est nécessaire avec le mode Microsoft.Testing.Platform 
 
 La [CI](../.github/workflows/ci.yml) exécute les mêmes commandes sur Ubuntu. Configurer le workflow ne signifie pas qu’il a déjà été exécuté sur GitHub Actions.
 
-Les premiers tests contrôlent les références autorisées entre projets, l’indépendance du cœur envers les packages externes, l’isolation des dépendances des composants, le prérendu de l’accueil et ses marqueurs Interactive Server, les ressources statiques et les réponses HTTP 404. Les tests de l’hôte utilisent un fournisseur de protection des données éphémère et ne nécessitent pas de secrets de développement. Les interactions navigateur, la base de données, OIDC, la compatibilité des modèles et la consommation NuGet externe relèvent des milestones suivants.
+Les tests d’architecture et d’hébergement contrôlent les références autorisées entre projets, l’indépendance du cœur envers les packages externes, l’isolation des dépendances des composants, le prérendu de l’accueil et ses marqueurs Interactive Server, les ressources statiques et les réponses HTTP 404. Les tests de l’hôte utilisent un fournisseur de protection des données éphémère et ne nécessitent pas de secrets de développement. Les interactions navigateur, la base de données, OIDC, la compatibilité des modèles et la consommation NuGet externe relèvent des milestones suivants.
+
+M2 ajoute `Marmotte.ChatUi.Core.Tests` : instantanés métier immuables, restauration d’historique, cycle de vie/réponses partielles, doublons, concurrence optimiste, isolation utilisateur, pagination bornée, validation des paramètres et annulation. Ses repositories de test ne nécessitent aucune infrastructure. Consulter la [référence du cœur](core.fr.md) pour les garanties des adaptateurs et les limites.
 
 ## Mettre à jour les dépendances
 
@@ -51,7 +53,7 @@ La première commande résout les packages pour cet hôte de compilation ; elle 
 - `.editorconfig` définit UTF-8, LF, les retours à la ligne finaux, une indentation de quatre espaces en C#/Razor et deux espaces pour les projets et la configuration. Utiliser des espaces de noms C# limités au fichier, une accessibilité explicite, des accolades et un espacement lisible. L’indentation Razor est aussi revue manuellement ; `dotnet format` ne valide pas toutes les règles Razor ou CSS.
 - Les références nullables, les analyseurs recommandés .NET 10, les règles de style et les avertissements traités comme erreurs s’appliquent à toute la solution. Éviter les suppressions globales d’avertissements. Les noms des méthodes de test peuvent utiliser des underscores.
 - Garder les composants centrés sur la présentation. Exclure de la RCL les appels aux fournisseurs, la persistance, les secrets et toute dépendance implicite à un circuit serveur. L’hôte choisit le mode de rendu.
-- Ajouter des tests comportementaux ciblés avec chaque futur cas d’usage ; les assemblies vides ne contiennent volontairement ni classes factices ni interfaces spéculatives.
+- Ajouter des tests comportementaux ciblés avec chaque cas d’usage. Les adaptateurs de test restent dans le projet de tests ; les assemblies d’infrastructure vides restent réservées à leurs milestones.
 - Toute modification Markdown inclut les versions anglaise et française correspondantes et des liens locaux dans la même langue.
 
 Consulter [l’exploitation](operations.fr.md) pour le démarrage local et les secrets, et [l’intégration](integration.fr.md) pour le contrat de rendu.

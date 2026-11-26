@@ -4,7 +4,7 @@
 
 ## Périmètre actuel
 
-M1 fournit un hôte web local et un AppHost Aspire contenant uniquement la ressource `web`. Aucune base de données, identité, connexion aux modèles, migration, gestion des fichiers ou configuration de santé/télémétrie n’est encore implémentée. ServiceDefaults est une assembly vide réservée à M3. Aucun déploiement de production n’est configuré.
+M1 fournit un hôte web local et un AppHost Aspire contenant uniquement la ressource `web`. Aucune base de données, identité, connexion aux modèles, migration, gestion des fichiers ou configuration de santé/télémétrie n’est encore implémentée. ServiceDefaults est une assembly vide réservée à M3. Aucun déploiement de production n’est configuré. M2 ajoute uniquement les cas d’usage du cœur et des adaptateurs de test ; Web ne les enregistre pas et aucune nouvelle clé de configuration d’exécution n’est ajoutée. La validation des profils de connexion et la séparation des paramètres du futur stockage des secrets sont décrites dans la [référence du cœur](core.fr.md).
 
 ## Démarrer et arrêter
 

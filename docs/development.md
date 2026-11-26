@@ -32,7 +32,9 @@ The `--solution` option is required by the selected Microsoft.Testing.Platform m
 
 [CI](../.github/workflows/ci.yml) runs the same commands on Ubuntu. Configuring the workflow does not establish that GitHub Actions has already run it.
 
-The initial tests enforce allowed project references, core independence from external packages, component dependency isolation, home-page prerendering and Interactive Server markers, static assets, and HTTP 404 behavior. Host tests use an ephemeral data-protection provider and do not require development secrets. Browser interaction, database access, OIDC, model compatibility, and external NuGet consumption belong to later milestones.
+The architecture and host tests enforce allowed project references, core independence from external packages, component dependency isolation, home-page prerendering and Interactive Server markers, static assets, and HTTP 404 behavior. Host tests use an ephemeral data-protection provider and do not require development secrets. Browser interaction, database access, OIDC, model compatibility, and external NuGet consumption belong to later milestones.
+
+M2 adds `Marmotte.ChatUi.Core.Tests`: immutable domain snapshots, history restoration, lifecycle/partial responses, duplicate submissions, optimistic concurrency, user isolation, bounded paging, settings validation, and cancellation. Its test-only repositories require no infrastructure. See the [core reference](core.md) for adapter guarantees and limitations.
 
 ## Updating dependencies
 
@@ -51,7 +53,7 @@ The first command resolves packages for that build host; it does not cross-compi
 - `.editorconfig` defines UTF-8, LF, final newlines, four-space C#/Razor indentation, and two-space project/configuration indentation. Use file-scoped C# namespaces, explicit accessibility, braces, and readable spacing. Razor indentation is also reviewed manually; `dotnet format` does not validate every Razor or CSS rule.
 - Nullable references, the .NET 10 recommended analyzers, style enforcement, and warnings as errors apply solution-wide. Avoid broad warning suppressions. Test method names may use underscores.
 - Keep components focused on presentation. Do not put provider calls, persistence, secrets, or implicit server-circuit dependencies into the RCL. The host chooses the render mode.
-- Add focused behavior tests with each future use case; empty assemblies intentionally contain no placeholder classes or speculative interfaces.
+- Add focused behavior tests with each use case. Test adapters stay in the test project; empty infrastructure assemblies remain reserved for their milestones.
 - Every Markdown change includes the matching English/French version and matching-language local links.
 
 See [operations](operations.md) for local startup and secrets, and [integration](integration.md) for the rendering contract.

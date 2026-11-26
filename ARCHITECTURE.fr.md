@@ -4,7 +4,7 @@
 
 ## Statut et objectif
 
-Ce document distingue le socle M1 implémenté de l’architecture produit cible. Les neuf projets sources, un hôte Blazor minimal en Interactive Server, un AppHost Aspire limité au web et les premières vérifications automatisées existent désormais. Les comportements métier, les intégrations, les composants de chat réutilisables et la publication NuGet restent prévus.
+Ce document distingue le cœur M1/M2 implémenté de l’architecture produit cible. Les neuf projets sources, un hôte Blazor minimal en Interactive Server, un AppHost Aspire limité au web, les invariants métier, les cas d’usage autorisés des conversations/paramètres, les ports et les vérifications automatisées existent désormais. Les intégrations d’infrastructure, les composants de chat réutilisables et la publication NuGet restent prévus ; Web n’est pas encore relié au cœur.
 
 Marmotte.ChatUi vise deux usages : une application de chat en .NET et Blazor, inspirée d’AnythingLLM et d’Open WebUI, et une bibliothèque de composants et widgets intégrables dans d’autres applications. L’application complète utilisera les mêmes composants que ceux distribués en NuGet.
 
@@ -35,7 +35,7 @@ Les frontières importantes correspondent à des assemblies distinctes. Il s’a
 
 ### Découpage cible
 
-Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts, Application, les deux adaptateurs, Components et ServiceDefaults établissent actuellement les frontières d’assemblies sans implémenter leurs futures API. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
+Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Les deux adaptateurs, Components et ServiceDefaults établissent encore les frontières sans leurs futures implémentations. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
 
 | Projet / assembly | Responsabilité | Dépendances internes principales |
 | --- | --- | --- |
@@ -69,13 +69,13 @@ Les flèches représentent les dépendances du code. À l’exécution, les cas 
 
 ## Modèle métier et contrats
 
-Le vocabulaire initial comprend Conversation, Message, Attachment, ConnectionProfile et UserPreferences. Les noms et limites d’agrégats seront affinés à partir des cas d’usage ; ils ne constituent pas encore un schéma de base de données.
+M2 implémente `Conversation` comme agrégat immuable contrôlant les paires de messages utilisateur/assistant ordonnées et les états de génération. `Attachment` porte des métadonnées possédées séparément ; `ConnectionProfile` et `UserPreferences` sont des instantanés de paramètres possédés distincts. GUID, horodatages UTC, révisions, règles de doublons et validation à la restauration préservent l’historique. Il ne s’agit pas encore d’un schéma de base de données.
 
-Une conversation appartient à un utilisateur. Ses messages conservent leur rôle, leur contenu, leur ordre et les métadonnées utiles à la reprise de l’historique. Les pièces jointes sont référencées par identifiant et métadonnées plutôt que transportées systématiquement en mémoire avec chaque lecture d’historique.
+L’application expose la création, pagination, lecture, suppression, soumission de texte, enregistrement/annulation des réponses et gestion des paramètres avec autorisation. L’identité courante et les repositories sont des ports ; chaque opération tire le propriétaire d’une identité serveur vérifiée et contrôle les propriétaires renvoyés. Les secrets des profils sont absents de ces contrats.
 
-Les ports applicatifs couvrent les besoins concrets : chargement et sauvegarde des conversations, préférences et profils, génération de réponses, capacités du modèle, identité courante, stockage des pièces jointes et préparation de contenu multimodal.
+Les écritures de conversation comparent les révisions et valident atomiquement les messages et références de pièces jointes. Les listes sont bornées et ordonnées ; le chargement d’une conversation matérialise actuellement tout l’historique. Les repositories n’exposent aucun type de base de données. Les ports de fournisseur définissent les capacités et flux de réponse, sans appel de modèle concret ni orchestration. Les ports de stockage binaire et préparation multimodale restent pour M9/M11.
 
-Les repositories exposent des opérations métier ciblées et paginées. Ils ne laissent pas traverser IQueryable, DbContext, NpgsqlConnection ou les types propres à pgvector. La cohérence d’un message et de ses références de pièces jointes doit être définie dans les opérations de persistance.
+Consulter la [référence du cœur](docs/core.fr.md) pour les invariants, transitions, API publiques, annulation, cohérence, durées de vie et limites. Les adaptateurs de test exercent ce comportement sans infrastructure ; les garanties PostgreSQL et l’authentification réelle restent à vérifier en M4/M5.
 
 ## Composants Blazor et distribution NuGet
 

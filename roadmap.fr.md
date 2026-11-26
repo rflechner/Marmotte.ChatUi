@@ -8,7 +8,7 @@ Cette feuille de route décline les décisions de [l’architecture](ARCHITECTUR
 
 ## Point de départ
 
-M1 est terminé : le socle de la solution, l’hôte Blazor/Aspire minimal, les premiers tests et la configuration CI sont implémentés. Sur les 82 tâches ci-dessous, 6 sont terminées et 76 restent ouvertes. Les fonctions de chat, les intégrations externes et la publication NuGet restent prévues.
+M1 et M2 sont terminés : le socle de la solution, l’hôte Blazor/Aspire minimal, les invariants métier, les cas d’usage autorisés des conversations/paramètres, les ports, les contrats de présentation, les tests et la configuration CI sont implémentés. Sur les 82 tâches ci-dessous, 13 sont terminées et 69 restent ouvertes. L’UI de chat, les intégrations externes et la publication NuGet restent prévues.
 
 ## Périmètre et suivi
 
@@ -62,15 +62,17 @@ M1 est terminé : le socle de la solution, l’hôte Blazor/Aspire minimal, les 
 
 **Dépendances:** [M1](#milestone-1).
 
-- [ ] **2.1** — Préciser le vocabulaire et les limites d’agrégats de Conversation, Message, Attachment, ConnectionProfile et UserPreferences.
-- [ ] **2.2** — Définir les identifiants, la propriété, l’ordre des messages, les horodatages et les invariants nécessaires pour créer et reprendre une conversation.
-- [ ] **2.3** — Spécifier les états de génération des messages : réception progressive, fin, annulation et échec, avec les règles de gestion des réponses partielles et des envois en double.
-- [ ] **2.4** — Définir des ports ciblés pour les repositories de conversations, les préférences, les profils de connexion, l’identité courante, les capacités des modèles et la génération ; exclure les types de fournisseurs de leurs signatures.
-- [ ] **2.5** — Implémenter les premiers cas d’usage de création, liste, chargement et suppression des conversations, d’enregistrement des messages et de gestion des préférences et profils, avec des frontières d’autorisation explicites.
-- [ ] **2.6** — Définir les contrats de présentation exposés à la bibliothèque de composants, notamment les mises à jour progressives, erreurs, annulations et métadonnées des pièces jointes.
-- [ ] **2.7** — Tester les invariants métier, les contrôles de propriété, la pagination et le cycle de vie des messages à travers les contrats applicatifs.
+- [x] **2.1** — Préciser le vocabulaire et les limites d’agrégats de Conversation, Message, Attachment, ConnectionProfile et UserPreferences.
+- [x] **2.2** — Définir les identifiants, la propriété, l’ordre des messages, les horodatages et les invariants nécessaires pour créer et reprendre une conversation.
+- [x] **2.3** — Spécifier les états de génération des messages : réception progressive, fin, annulation et échec, avec les règles de gestion des réponses partielles et des envois en double.
+- [x] **2.4** — Définir des ports ciblés pour les repositories de conversations, les préférences, les profils de connexion, l’identité courante, les capacités des modèles et la génération ; exclure les types de fournisseurs de leurs signatures.
+- [x] **2.5** — Implémenter les premiers cas d’usage de création, liste, chargement et suppression des conversations, d’enregistrement des messages et de gestion des préférences et profils, avec des frontières d’autorisation explicites.
+- [x] **2.6** — Définir les contrats de présentation exposés à la bibliothèque de composants, notamment les mises à jour progressives, erreurs, annulations et métadonnées des pièces jointes.
+- [x] **2.7** — Tester les invariants métier, les contrôles de propriété, la pagination et le cycle de vie des messages à travers les contrats applicatifs.
 
 **Critère de validation:** Les cas d’usage et invariants du cœur sont vérifiables avec des adaptateurs de test, sans Blazor, PostgreSQL, Keycloak ni SDK OpenAI.
+
+**Validation (2026-11-25) :** Sur macOS ARM64 avec le SDK 10.0.401, la restauration verrouillée, la compilation Release (sans avertissement ni erreur), le formatage/les analyseurs et les 51 tests passent, dont 33 nouveaux tests du cœur. Ils exercent la propriété, la pagination, l’historique immuable/restauré, le cycle de vie et les réponses partielles, les doublons, les écritures concurrentes, les paramètres et l’annulation avec des adaptateurs de test. Les paires anglais/français et les liens locaux ont été contrôlés. Aucune validation de base de données, fournisseur d’identité, serveur de modèles, chat dans le navigateur ou NuGet n’est revendiquée. Consulter la [référence du cœur](docs/core.fr.md) pour les garanties des API et les limites restantes.
 
 <a id="milestone-3"></a>
 

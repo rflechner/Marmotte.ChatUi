@@ -13,7 +13,7 @@ Une application de chat en .NET et Blazor, et des composants réutilisables pour
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="La mascotte marmotte avec une pancarte Experimental Proof of Concept" width="320" />
 
-Le milestone 1 est implémenté : une solution .NET 10 avec neuf projets sources, un hôte Blazor minimal en interactivité serveur, un AppHost Aspire qui démarre l’hôte web, des tests d’architecture et d’hébergement, et une configuration CI. Le domaine, les contrats applicatifs, les adaptateurs, les composants de chat réutilisables et le comportement de ServiceDefaults restent pour les milestones suivants. Aucun package NuGet n’est publié.
+Les milestones 1 et 2 sont implémentés : le socle .NET 10/Blazor/Aspire, le modèle métier, les cas d’usage autorisés des conversations et paramètres, les ports indépendants des fournisseurs, les contrats de présentation et les tests automatisés. Le cœur fonctionne avec des adaptateurs de test ; Web affiche toujours la page du socle. La persistance réelle, les adaptateurs d’identité/modèles, les composants de chat réutilisables et le comportement de ServiceDefaults restent pour les milestones suivants. Aucun package NuGet n’est publié.
 
 ## Direction du produit
 
@@ -29,12 +29,13 @@ Le milestone 1 est implémenté : une solution .NET 10 avec neuf projets sources
 
 - [Roadmap et tâches par milestone](roadmap.fr.md)
 - [Architecture et périmètre](ARCHITECTURE.fr.md)
+- [Modèle métier, ports et cas d’usage](docs/core.fr.md)
 - [Consignes de contribution](AGENTS.fr.md)
 - [Mascotte et provenance des images](docs/images/README.fr.md)
 
 ## Compiler et démarrer
 
-Installer le SDK .NET sélectionné par [global.json](global.json) : `10.0.401` ou un correctif ultérieur de la même bande `10.0.4xx`. La première restauration nécessite un accès à NuGet. Docker, un serveur de modèles et des identifiants ne sont pas nécessaires pour M1.
+Installer le SDK .NET sélectionné par [global.json](global.json) : `10.0.401` ou un correctif ultérieur de la même bande `10.0.4xx`. La première restauration nécessite un accès à NuGet. Docker, un serveur de modèles et des identifiants ne sont pas nécessaires pour M1/M2.
 
 Depuis la racine du dépôt :
 
