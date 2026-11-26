@@ -2,88 +2,51 @@ using System.Data;
 using Marmotte.ChatUi.Application.Ports;
 using Marmotte.ChatUi.Contracts;
 using Marmotte.ChatUi.Domain;
-using Npgsql;
-using NpgsqlTypes;
+using Microsoft.EntityFrameworkCore;
 
 namespace Marmotte.ChatUi.Persistence.PostgreSql;
 
-/// <summary>Persists whole conversation snapshots using revision comparisons and atomic message/reference replacement.</summary>
+/// <summary>Persists whole conversation snapshots through EF with owner/revision predicates and atomic message replacement.</summary>
 /// <remarks>Repeatable-read loading prevents mixed revisions. Navigation never loads message contents.</remarks>
-internal sealed class ConversationRepository(Database database) : IConversationRepository
+internal sealed class ConversationRepository(IDbContextFactory<ChatDbContext> contexts) : IConversationRepository
 {
     public Task<Conversation?> FindAsync(UserId ownerId, Guid conversationId, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken).ConfigureAwait(false);
-        ConversationEntry entry;
-        await using (var command = Database.Command(connection,
-            "SELECT id, title, created_at, updated_at, revision FROM chat.conversations WHERE owner_id = $1 AND id = $2", ownerId.Value, conversationId))
-        await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        await using var transaction = await context.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken).ConfigureAwait(false);
+        var row = await context.Conversations.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.OwnerId == ownerId.Value && item.Id == conversationId, cancellationToken).ConfigureAwait(false);
+        if (row is null)
         {
-            if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                return null;
-            }
-
-            entry = ReadEntry(reader, ownerId);
+            return null;
         }
 
-        var attachments = new Dictionary<Guid, List<Attachment>>();
-        await using (var command = Database.Command(connection, """
-            SELECT a.id, a.owner_id, a.file_name, a.media_type, a.size_bytes, a.created_at, a.state, a.width, a.height, r.message_id
-            FROM chat.message_attachments r JOIN chat.attachments a ON a.owner_id = r.owner_id AND a.id = r.attachment_id
-            WHERE r.owner_id = $1 AND r.conversation_id = $2 ORDER BY r.message_id, r.position
-            """, ownerId.Value, conversationId))
-        await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-        {
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var messageId = reader.GetGuid(9);
-                if (!attachments.TryGetValue(messageId, out var list))
-                {
-                    list = [];
-                    attachments.Add(messageId, list);
-                }
-
-                list.Add(AttachmentMetadataRepository.Read(reader));
-            }
-        }
-
-        var messages = new List<Message>();
-        await using (var command = Database.Command(connection, """
-            SELECT id, submission_id, sequence, role, content, state, created_at, updated_at, failure
-            FROM chat.messages WHERE owner_id = $1 AND conversation_id = $2 ORDER BY sequence
-            """, ownerId.Value, conversationId))
-        await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-        {
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                messages.Add(new Message(reader.GetGuid(0), reader.GetGuid(1), reader.GetInt64(2), (MessageRole)reader.GetInt32(3),
-                    reader.GetString(4), (MessageState)reader.GetInt32(5), reader.GetFieldValue<DateTimeOffset>(6),
-                    reader.GetFieldValue<DateTimeOffset>(7), attachments.GetValueOrDefault(reader.GetGuid(0)),
-                    reader.IsDBNull(8) ? null : (GenerationFailure)reader.GetInt32(8)));
-            }
-        }
-
-        var result = Conversation.Restore(entry.Id, ownerId, entry.Title, entry.CreatedAt, entry.UpdatedAt, entry.Revision, messages);
+        var references = await (from reference in context.MessageAttachments.AsNoTracking()
+                                join attachment in context.Attachments.AsNoTracking()
+                                    on new { reference.OwnerId, Id = reference.AttachmentId } equals new { attachment.OwnerId, attachment.Id }
+                                where reference.OwnerId == ownerId.Value && reference.ConversationId == conversationId
+                                orderby reference.Position
+                                select new { reference.MessageId, Attachment = attachment })
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        var attachments = references.ToLookup(reference => reference.MessageId, reference => reference.Attachment.ToDomain());
+        var rows = await context.Messages.AsNoTracking()
+            .Where(item => item.OwnerId == ownerId.Value && item.ConversationId == conversationId)
+            .OrderBy(item => item.Sequence).ToListAsync(cancellationToken).ConfigureAwait(false);
+        var messages = rows.Select(message => new Message(message.Id, message.SubmissionId, message.Sequence,
+            (MessageRole)message.Role, message.Content, (MessageState)message.State, message.CreatedAt, message.UpdatedAt,
+            attachments[message.Id], (GenerationFailure?)message.Failure));
+        var result = Conversation.Restore(row.Id, ownerId, row.Title, row.CreatedAt, row.UpdatedAt, row.Revision, messages);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return result;
     });
 
     public Task<Page<ConversationEntry>> ListAsync(UserId ownerId, PageRequest page, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var command = Database.Command(connection, """
-            SELECT id, title, created_at, updated_at, revision FROM chat.conversations
-            WHERE owner_id = $1 ORDER BY created_at, id LIMIT $2 OFFSET $3
-            """, ownerId.Value, page.Limit + 1, page.Offset);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        var entries = new List<ConversationEntry>();
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-        {
-            entries.Add(ReadEntry(reader, ownerId));
-        }
-
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var entries = await context.Conversations.AsNoTracking().Where(row => row.OwnerId == ownerId.Value)
+            .OrderBy(row => row.CreatedAt).ThenBy(row => row.Id).Skip(page.Offset).Take(page.Limit + 1)
+            .Select(row => new ConversationEntry(row.Id, ownerId, row.Title, row.CreatedAt, row.UpdatedAt, row.Revision))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
         return new Page<ConversationEntry>(entries.Take(page.Limit).ToArray(), entries.Count > page.Limit);
     });
 
@@ -95,54 +58,71 @@ internal sealed class ConversationRepository(Database database) : IConversationR
             throw new ChatOperationException(ChatErrorCode.Conflict);
         }
 
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-        await using (var command = expectedRevision == 0
-            ? Database.Command(connection, """
-                INSERT INTO chat.conversations (owner_id, id, title, created_at, updated_at, revision)
-                VALUES ($1, $2, $3, $4, $5, $6)
-                """, ownerId.Value, conversation.Id, conversation.Title, conversation.CreatedAt, conversation.UpdatedAt, conversation.Revision)
-            : Database.Command(connection, """
-                UPDATE chat.conversations SET title = $3, updated_at = $4, revision = $5
-                WHERE owner_id = $1 AND id = $2 AND revision = $6 AND created_at = $7 AND updated_at <= $4
-                """, ownerId.Value, conversation.Id, conversation.Title, conversation.UpdatedAt, conversation.Revision, expectedRevision, conversation.CreatedAt))
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        if (expectedRevision == 0)
         {
-            if (await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) != 1)
+            context.Conversations.Add(new ConversationRow
+            {
+                Id = conversation.Id,
+                OwnerId = ownerId.Value,
+                Title = conversation.Title,
+                CreatedAt = conversation.CreatedAt,
+                UpdatedAt = conversation.UpdatedAt,
+                Revision = conversation.Revision
+            });
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            // ExecuteUpdate bypasses tracking; its explicit revision predicate is the compare-and-swap.
+            var affected = await context.Conversations
+                .Where(row => row.OwnerId == ownerId.Value && row.Id == conversation.Id && row.Revision == expectedRevision
+                    && row.CreatedAt == conversation.CreatedAt && row.UpdatedAt <= conversation.UpdatedAt)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.Title, conversation.Title)
+                    .SetProperty(row => row.UpdatedAt, conversation.UpdatedAt)
+                    .SetProperty(row => row.Revision, conversation.Revision), cancellationToken).ConfigureAwait(false);
+            if (affected != 1)
             {
                 throw new ChatOperationException(ChatErrorCode.Conflict);
             }
         }
 
-        await using (var clear = Database.Command(connection,
-            "DELETE FROM chat.messages WHERE owner_id = $1 AND conversation_id = $2", ownerId.Value, conversation.Id))
-        {
-            await clear.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-        }
-
+        await context.Messages.Where(row => row.OwnerId == ownerId.Value && row.ConversationId == conversation.Id)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         foreach (var message in conversation.Messages)
         {
-            await using var insert = Database.Command(connection, """
-                INSERT INTO chat.messages (owner_id, conversation_id, id, submission_id, sequence, role, content, state, failure, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                """, ownerId.Value, conversation.Id, message.Id, message.SubmissionId, message.Sequence, (int)message.Role,
-                message.Content, (int)message.State, Database.Nullable((int?)message.Failure, NpgsqlDbType.Integer), message.CreatedAt, message.UpdatedAt);
-            await insert.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            context.Messages.Add(new MessageRow
+            {
+                OwnerId = ownerId.Value,
+                ConversationId = conversation.Id,
+                Id = message.Id,
+                SubmissionId = message.SubmissionId,
+                Sequence = message.Sequence,
+                Role = (int)message.Role,
+                Content = message.Content,
+                State = (int)message.State,
+                Failure = (int?)message.Failure,
+                CreatedAt = message.CreatedAt,
+                UpdatedAt = message.UpdatedAt
+            });
             for (var position = 0; position < message.Attachments.Count; position++)
             {
-                await SaveReferenceAsync(connection, conversation, message, message.Attachments[position], position, cancellationToken).ConfigureAwait(false);
+                await AddReferenceAsync(context, conversation, message, message.Attachments[position], position, cancellationToken).ConfigureAwait(false);
             }
         }
 
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return true;
     });
 
     public Task DeleteAsync(UserId ownerId, Guid conversationId, long expectedRevision, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var command = Database.Command(connection,
-            "DELETE FROM chat.conversations WHERE owner_id = $1 AND id = $2 AND revision = $3", ownerId.Value, conversationId, expectedRevision);
-        if (await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) != 1)
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var affected = await context.Conversations.Where(row => row.OwnerId == ownerId.Value && row.Id == conversationId && row.Revision == expectedRevision)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        if (affected != 1)
         {
             throw new ChatOperationException(ChatErrorCode.Conflict);
         }
@@ -150,25 +130,26 @@ internal sealed class ConversationRepository(Database database) : IConversationR
         return true;
     });
 
-    /// <summary>Maps an owner-filtered navigation row; the reader must contain the five selected columns.</summary>
-    private static ConversationEntry ReadEntry(NpgsqlDataReader reader, UserId ownerId) => new(reader.GetGuid(0), ownerId,
-        reader.GetString(1), reader.GetFieldValue<DateTimeOffset>(2), reader.GetFieldValue<DateTimeOffset>(3), reader.GetInt64(4));
-
-    /// <summary>Inserts a reference only if existing ready metadata matches the owned snapshot; failure rolls back the entire conversation write.</summary>
-    private static async Task SaveReferenceAsync(NpgsqlConnection connection, Conversation conversation, Message message,
+    /// <summary>Checks existing immutable metadata before tracking an owned reference; failure rolls back the whole conversation.</summary>
+    private static async Task AddReferenceAsync(ChatDbContext context, Conversation conversation, Message message,
         Attachment attachment, int position, CancellationToken cancellationToken)
     {
-        await using var command = Database.Command(connection, """
-            INSERT INTO chat.message_attachments (owner_id, conversation_id, message_id, attachment_id, position)
-            SELECT owner_id, $2, $3, id, $5 FROM chat.attachments
-            WHERE owner_id = $1 AND id = $4 AND state = 2 AND file_name = $6 AND media_type = $7
-                AND size_bytes = $8 AND created_at = $9 AND width IS NOT DISTINCT FROM $10 AND height IS NOT DISTINCT FROM $11
-            """, conversation.OwnerId.Value, conversation.Id, message.Id, attachment.Id, position, attachment.FileName,
-            attachment.MediaType, attachment.SizeBytes, attachment.CreatedAt, Database.Nullable(attachment.Width, NpgsqlDbType.Integer),
-            Database.Nullable(attachment.Height, NpgsqlDbType.Integer));
-        if (await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) != 1)
+        var exists = await context.Attachments.AnyAsync(row => row.OwnerId == conversation.OwnerId.Value && row.Id == attachment.Id
+            && row.State == (int)AttachmentState.Ready && row.FileName == attachment.FileName && row.MediaType == attachment.MediaType
+            && row.SizeBytes == attachment.SizeBytes && row.CreatedAt == attachment.CreatedAt
+            && row.Width == attachment.Width && row.Height == attachment.Height, cancellationToken).ConfigureAwait(false);
+        if (!exists)
         {
             throw new ChatOperationException(ChatErrorCode.NotFound);
         }
+
+        context.MessageAttachments.Add(new MessageAttachmentRow
+        {
+            OwnerId = conversation.OwnerId.Value,
+            ConversationId = conversation.Id,
+            MessageId = message.Id,
+            AttachmentId = attachment.Id,
+            Position = position
+        });
     }
 }

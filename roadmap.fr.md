@@ -121,7 +121,7 @@ M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autoris
 
 **Dépendances:** [M2](#milestone-2), [M3](#milestone-3), [M4](#milestone-4).
 
-- [x] **5.1** — Choisir et documenter l’approche d’accès aux données, en confinant les dépendances ORM ou SQL à Persistence.PostgreSql.
+- [x] **5.1** — Utiliser EF Core en code first avec migrations générées, en confinant les dépendances ORM et fournisseur à Persistence.PostgreSql.
 - [x] **5.2** — Définir les mappings, clés, index et migrations des conversations, messages, profils, préférences et métadonnées de pièces jointes, sans tables d’embeddings spéculatives.
 - [x] **5.3** — Implémenter les repositories avec filtrage par utilisateur, pagination, annulation et mapping vers le domaine ou les DTO internes ; n’exposer aucun type propre à la base.
 - [x] **5.4** — Définir les transactions et la gestion de concurrence pour l’ordre des messages, les générations partielles, les envois répétés et les références de pièces jointes.
@@ -132,7 +132,7 @@ M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autoris
 
 **Critère de validation:** L’historique et les paramètres d’un utilisateur authentifié survivent à un redémarrage, avec migrations, pagination et isolation vérifiées sur PostgreSQL.
 
-**Validation (2026-11-26) :** Sur macOS ARM64 avec le SDK 10.0.401, restauration verrouillée, compilation Release (sans avertissement ni erreur), formatage/analyseurs et les 83 tests courants passent. Les huit tests PostgreSQL optionnels passent, dont redémarrage hôte/base authentifié, récupération des secrets et refus des clés absentes/données altérées, isolation, pagination, révisions concurrentes, suppression/conservation, annulation sous verrou et mise à niveau depuis le schéma 001. Le test Aspire réel passe aussi ses contrôles pgvector/Keycloak/migrations métier sur trois démarrages. La CI inclut désormais la suite PostgreSQL ; aucune exécution GitHub Actions ni déploiement de production n’est revendiqué. Écritures de l’historique complet, fichiers de clés locaux non chiffrés et travaux UI/uploads/récupération différés sont décrits dans [persistance](docs/persistence.fr.md).
+**Validation (2026-11-26) :** Sur macOS ARM64 avec le SDK 10.0.401, restauration verrouillée, compilation Release (sans avertissement ni erreur), formatage/analyseurs et les 84 tests courants passent, dont la concordance modèle/instantané EF. Les douze tests PostgreSQL optionnels passent, dont redémarrage hôte/base authentifié, récupération des secrets et refus des clés absentes/données altérées, isolation, pagination, révisions concurrentes, suppression/conservation, annulation sous verrou mises à niveau entre migrations EF et reprise des deux anciens schémas SQL avec conservation des historiques/paramètres/secrets et refus des dérives. Le test Aspire réel passe aussi ses contrôles pgvector/Keycloak/migrations métier sur trois démarrages. Le CLI EF fixé liste les migrations, contrôle l’instantané, met à jour deux fois une base neuve et génère un script idempotent appliqué deux fois à une autre base neuve. La CI inclut la suite PostgreSQL et le contrôle de dérive du modèle ; aucune exécution GitHub Actions ni déploiement de production n’est revendiqué. Écritures de l’historique complet, fichiers de clés locaux non chiffrés et travaux UI/uploads/récupération différés sont décrits dans [persistance](docs/persistence.fr.md).
 
 <a id="milestone-6"></a>
 

@@ -4,35 +4,36 @@ using Marmotte.ChatUi.Application.Ports;
 using Marmotte.ChatUi.Contracts;
 using Marmotte.ChatUi.Domain;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 
 namespace Marmotte.ChatUi.Persistence.PostgreSql;
 
-/// <summary>Protects credentials with a host-owned persistent key ring and purposes bound to the exact owner/profile.</summary>
-/// <remarks>Plaintext never enters SQL parameters. Missing keys or tampering fail closed with a safe storage error.</remarks>
-internal sealed class ModelCredentialStore(Database database, IDataProtectionProvider protection) : IModelCredentialStore
+/// <summary>Persists authenticated ciphertext through EF with purposes bound to the exact owner/profile.</summary>
+/// <remarks>Plaintext never enters the change tracker or SQL. Missing keys and tampering fail closed.</remarks>
+internal sealed class ModelCredentialStore(IDbContextFactory<ChatDbContext> contexts, IDataProtectionProvider protection) : IModelCredentialStore
 {
     public Task<ModelCredential?> FindAsync(UserId ownerId, Guid profileId, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var command = Database.Command(connection, """
-            SELECT c.protected_value FROM chat.profiles p LEFT JOIN chat.profile_credentials c
-                ON c.owner_id = p.owner_id AND c.profile_id = p.id
-            WHERE p.owner_id = $1 AND p.id = $2
-            """, ownerId.Value, profileId);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var profile = await context.Profiles.AsNoTracking().Where(row => row.OwnerId == ownerId.Value && row.Id == profileId)
+            .Select(row => new
+            {
+                ProtectedValue = context.Credentials.Where(secret => secret.OwnerId == row.OwnerId && secret.ProfileId == row.Id)
+                    .Select(secret => secret.ProtectedValue).FirstOrDefault()
+            }).SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        if (profile is null)
         {
             throw new ChatOperationException(ChatErrorCode.NotFound);
         }
 
-        if (reader.IsDBNull(0))
+        if (profile.ProtectedValue is null)
         {
             return null;
         }
 
         try
         {
-            var bytes = Protector(ownerId, profileId).Unprotect(reader.GetFieldValue<byte[]>(0));
+            var bytes = Protector(ownerId, profileId).Unprotect(profile.ProtectedValue);
             try
             {
                 return new ModelCredential(Encoding.UTF8.GetString(bytes));
@@ -51,9 +52,9 @@ internal sealed class ModelCredentialStore(Database database, IDataProtectionPro
     public Task SaveAsync(UserId ownerId, Guid profileId, ModelCredential credential, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
         ArgumentNullException.ThrowIfNull(credential);
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-        await ConnectionProfileRepository.LockAsync(connection, ownerId, profileId, cancellationToken).ConfigureAwait(false);
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await ConnectionProfileRepository.LockAsync(context, ownerId, profileId, cancellationToken).ConfigureAwait(false);
         byte[] ciphertext;
         var bytes = Encoding.UTF8.GetBytes(credential.Value);
         try
@@ -69,23 +70,28 @@ internal sealed class ModelCredentialStore(Database database, IDataProtectionPro
             CryptographicOperations.ZeroMemory(bytes);
         }
 
-        await using var command = Database.Command(connection, """
-            INSERT INTO chat.profile_credentials (owner_id, profile_id, protected_value) VALUES ($1, $2, $3)
-            ON CONFLICT (owner_id, profile_id) DO UPDATE SET protected_value = EXCLUDED.protected_value
-            """, ownerId.Value, profileId, ciphertext);
-        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        var row = await context.Credentials.SingleOrDefaultAsync(item => item.OwnerId == ownerId.Value && item.ProfileId == profileId, cancellationToken).ConfigureAwait(false);
+        if (row is null)
+        {
+            context.Credentials.Add(new ModelCredentialRow { OwnerId = ownerId.Value, ProfileId = profileId, ProtectedValue = ciphertext });
+        }
+        else
+        {
+            row.ProtectedValue = ciphertext;
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return true;
     });
 
     public Task DeleteAsync(UserId ownerId, Guid profileId, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-        await ConnectionProfileRepository.LockAsync(connection, ownerId, profileId, cancellationToken).ConfigureAwait(false);
-        await using var command = Database.Command(connection,
-            "DELETE FROM chat.profile_credentials WHERE owner_id = $1 AND profile_id = $2", ownerId.Value, profileId);
-        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await ConnectionProfileRepository.LockAsync(context, ownerId, profileId, cancellationToken).ConfigureAwait(false);
+        await context.Credentials.Where(row => row.OwnerId == ownerId.Value && row.ProfileId == profileId)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return true;
     });

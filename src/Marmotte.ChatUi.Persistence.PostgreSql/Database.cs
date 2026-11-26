@@ -1,18 +1,16 @@
 using Marmotte.ChatUi.Contracts;
 using Marmotte.ChatUi.Domain;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
-using NpgsqlTypes;
 
 namespace Marmotte.ChatUi.Persistence.PostgreSql;
 
-/// <summary>Owns the connection pool and contains provider error translation and bounded SQL execution.</summary>
-/// <remarks>Singleton; connections, commands, and transactions belong to each operation and are never shared by circuits.</remarks>
-internal sealed class Database : IAsyncDisposable
+/// <summary>Configures bounded EF operations and translates storage errors without leaking provider diagnostics.</summary>
+internal static class Database
 {
-    private readonly NpgsqlDataSource source;
-
-    /// <summary>Builds a pool without parameter logging or server error details; malformed configuration fails at composition.</summary>
-    internal Database(string connectionString)
+    /// <summary>Applies identical runtime/design-time provider settings without sensitive logging or automatic retries.</summary>
+    internal static void Configure(DbContextOptionsBuilder options, string connectionString)
     {
         var settings = new NpgsqlConnectionStringBuilder(connectionString)
         {
@@ -22,33 +20,13 @@ internal sealed class Database : IAsyncDisposable
             LogParameters = false,
             Options = "-c statement_timeout=30000 -c lock_timeout=10000"
         };
-        source = NpgsqlDataSource.Create(settings.ConnectionString);
+        options.UseNpgsql(settings.ConnectionString, provider => provider.MigrationsHistoryTable("__EFMigrationsHistory", "chat"))
+            .EnableSensitiveDataLogging(false)
+            .EnableDetailedErrors(false)
+            .UseLoggerFactory(NullLoggerFactory.Instance);
     }
 
-    /// <summary>Leases a connection; the caller must dispose it. Cancellation reaches pool waits and connection establishment.</summary>
-    internal ValueTask<NpgsqlConnection> OpenAsync(CancellationToken cancellationToken) => source.OpenConnectionAsync(cancellationToken);
-
-    /// <summary>Creates a positional-parameter command. Nulls have an explicit type; SQL strings must be adapter-owned constants.</summary>
-    internal static NpgsqlCommand Command(NpgsqlConnection connection, string sql, params object?[] values)
-    {
-        var command = new NpgsqlCommand(sql, connection);
-        foreach (var value in values)
-        {
-            command.Parameters.Add(value is SqlNull missing
-                ? new NpgsqlParameter { NpgsqlDbType = missing.Type, Value = DBNull.Value }
-                : new NpgsqlParameter { Value = value ?? throw new ArgumentException("Use a typed SQL null.", nameof(values)) });
-        }
-
-        return command;
-    }
-
-    /// <summary>Returns a typed database null when the supplied nullable scalar has no value.</summary>
-    internal static object Nullable<T>(T? value, NpgsqlDbType type) where T : struct => value.HasValue ? value.Value : new SqlNull(type);
-
-    /// <summary>Returns a typed text null when an optional string is absent.</summary>
-    internal static object Text(string? value) => value is null ? new SqlNull(NpgsqlDbType.Text) : value;
-
-    /// <summary>Rejects foreign snapshots before opening a connection, without revealing their existence.</summary>
+    /// <summary>Rejects foreign snapshots before database access, without revealing their existence.</summary>
     internal static void RequireOwner(UserId expected, UserId actual)
     {
         if (expected != actual)
@@ -57,35 +35,35 @@ internal sealed class Database : IAsyncDisposable
         }
     }
 
-    /// <summary>Executes an operation without retries and suppresses SQL diagnostics that could contain private values.</summary>
-    /// <remarks>Cancellation and safe application failures propagate; known constraint/concurrency failures retain safe categories.</remarks>
+    /// <summary>Executes once, propagates cancellation, and translates direct or EF-wrapped database failures.</summary>
     internal static async Task<T> RunAsync<T>(Func<Task<T>> operation)
     {
         try
         {
             return await operation().ConfigureAwait(false);
         }
-        catch (PostgresException exception) when (exception.SqlState is "23505" or "40001" or "40P01")
+        catch (DbUpdateConcurrencyException)
         {
             throw new ChatOperationException(ChatErrorCode.Conflict);
         }
-        catch (PostgresException exception) when (exception.SqlState == "23503")
+        catch (DbUpdateException exception)
         {
-            throw new ChatOperationException(ChatErrorCode.NotFound);
+            throw Translate(exception.InnerException);
         }
-        catch (PostgresException exception) when (exception.SqlState is "23514" or "22001")
+        catch (NpgsqlException exception)
         {
-            throw new ChatOperationException(ChatErrorCode.InvalidRequest);
-        }
-        catch (NpgsqlException)
-        {
-            throw new ChatOperationException(ChatErrorCode.StorageUnavailable);
+            throw Translate(exception);
         }
     }
 
-    /// <summary>Closes the pool when the owning service provider shuts down.</summary>
-    public ValueTask DisposeAsync() => source.DisposeAsync();
-
-    /// <summary>Carries only the PostgreSQL type of an absent parameter; never contains application data.</summary>
-    private sealed record SqlNull(NpgsqlDbType Type);
+    /// <summary>Maps known constraint/concurrency failures without retaining private provider diagnostics.</summary>
+    private static ChatOperationException Translate(Exception? exception) => new(exception is PostgresException postgres
+        ? postgres.SqlState switch
+        {
+            "23505" or "40001" or "40P01" => ChatErrorCode.Conflict,
+            "23503" => ChatErrorCode.NotFound,
+            "23514" or "22001" => ChatErrorCode.InvalidRequest,
+            _ => ChatErrorCode.StorageUnavailable
+        }
+        : ChatErrorCode.StorageUnavailable);
 }

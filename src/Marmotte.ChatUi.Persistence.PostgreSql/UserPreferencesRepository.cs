@@ -1,39 +1,44 @@
 using Marmotte.ChatUi.Application.Ports;
 using Marmotte.ChatUi.Domain;
-using NpgsqlTypes;
+using Microsoft.EntityFrameworkCore;
 
 namespace Marmotte.ChatUi.Persistence.PostgreSql;
 
-/// <summary>Upserts one preferences snapshot per user while locking selected profiles against concurrent deletion.</summary>
-internal sealed class UserPreferencesRepository(Database database) : IUserPreferencesRepository
+/// <summary>Upserts preferences through EF while serializing creation and protecting selected profiles from deletion.</summary>
+internal sealed class UserPreferencesRepository(IDbContextFactory<ChatDbContext> contexts) : IUserPreferencesRepository
 {
     public Task<UserPreferences?> FindAsync(UserId ownerId, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var command = Database.Command(connection,
-            "SELECT theme, selected_profile_id, selected_model FROM chat.preferences WHERE owner_id = $1", ownerId.Value);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        return await reader.ReadAsync(cancellationToken).ConfigureAwait(false)
-            ? new UserPreferences(ownerId, (ThemeMode)reader.GetInt32(0), reader.IsDBNull(1) ? null : reader.GetGuid(1), reader.IsDBNull(2) ? null : reader.GetString(2))
-            : null;
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var row = await context.Preferences.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.OwnerId == ownerId.Value, cancellationToken).ConfigureAwait(false);
+        return row?.ToDomain();
     });
 
     public Task SaveAsync(UserId ownerId, UserPreferences preferences, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
         Database.RequireOwner(ownerId, preferences.OwnerId);
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
         if (preferences.SelectedProfileId is { } profileId)
         {
-            await ConnectionProfileRepository.LockAsync(connection, ownerId, profileId, cancellationToken).ConfigureAwait(false);
+            await ConnectionProfileRepository.LockAsync(context, ownerId, profileId, cancellationToken).ConfigureAwait(false);
         }
 
-        await using var command = Database.Command(connection, """
-            INSERT INTO chat.preferences (owner_id, theme, selected_profile_id, selected_model) VALUES ($1, $2, $3, $4)
-            ON CONFLICT (owner_id) DO UPDATE SET theme = EXCLUDED.theme,
-                selected_profile_id = EXCLUDED.selected_profile_id, selected_model = EXCLUDED.selected_model
-            """, ownerId.Value, (int)preferences.Theme, Database.Nullable(preferences.SelectedProfileId, NpgsqlDbType.Uuid), Database.Text(preferences.SelectedModel));
-        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        // Serialize first insertion as well as updates without retrying writes or introducing a synthetic user table.
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({ownerId.Value}, 781245906252))", cancellationToken).ConfigureAwait(false);
+        var row = await context.Preferences.SingleOrDefaultAsync(item => item.OwnerId == ownerId.Value, cancellationToken).ConfigureAwait(false);
+        if (row is null)
+        {
+            row = new UserPreferencesRow { OwnerId = ownerId.Value };
+            context.Preferences.Add(row);
+        }
+
+        row.Theme = (int)preferences.Theme;
+        row.SelectedProfileId = preferences.SelectedProfileId;
+        row.SelectedModel = preferences.SelectedModel;
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return true;
     });

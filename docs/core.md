@@ -4,7 +4,7 @@ English | [Français](core.fr.md)
 
 ## Implemented scope
 
-M2 implements the domain, provider-neutral ports, presentation contracts, and authorized use cases for conversations and settings. [Core tests](../tests/Marmotte.ChatUi.Core.Tests) exercise them using an in-memory test adapter and a controlled clock. M4 registers the scoped OIDC `ICurrentUser` adapter in Web and tests it with these use cases. M5 composes these services with PostgreSQL repositories when configured. Model calls, uploads, and generation orchestration remain unimplemented. See [persistence](persistence.md) for schema and adapter behavior.
+M2 implements the domain, provider-neutral ports, presentation contracts, and authorized use cases for conversations and settings. [Core tests](../tests/Marmotte.ChatUi.Core.Tests) exercise them using an in-memory test adapter and a controlled clock. M4 registers the scoped OIDC `ICurrentUser` adapter in Web and tests it with these use cases. M5 composes these services with EF Core/PostgreSQL repositories when configured; EF entities and contexts stay inside the persistence adapter. Model calls, uploads, and generation orchestration remain unimplemented. See [persistence](persistence.md) for schema and adapter behavior.
 
 The AI model is the remote model selected in a connection profile. The domain model below describes application behavior and has no dependency on that provider, Blazor, or persistence libraries. Domain and Contracts have no project or package dependency; Application references only Domain and Contracts.
 

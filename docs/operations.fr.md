@@ -105,7 +105,7 @@ Références : [OIDC ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core
 
 ## Persistance métier et clés de protection
 
-Avec `ConnectionStrings:chatdb` configuré, Web enregistre les services applicatifs et applique les migrations métier avant disponibilité. Aspire fournit automatiquement cette connexion. `Persistence:KeyDirectory` choisit le répertoire absolu des clés Data Protection ; Aspire peut transmettre `Infrastructure:KeyDirectory`. La valeur par défaut est `Environment.SpecialFolder.LocalApplicationData/Marmotte.ChatUi/keys`. Garder ce répertoire privé et le sauvegarder séparément de PostgreSQL ; le POC local ne chiffre pas ces fichiers de clés au repos. Voir [persistance](persistence.fr.md) pour schéma, migrations/rollback, concurrence, suppression/conservation, récupération des secrets et commandes de vérification.
+Avec `ConnectionStrings:chatdb` configuré, Web enregistre les services applicatifs et applique les migrations EF code first générées avant disponibilité. Aspire fournit automatiquement cette connexion. `Persistence:KeyDirectory` choisit le répertoire absolu des clés Data Protection ; Aspire peut transmettre `Infrastructure:KeyDirectory`. La valeur par défaut est `Environment.SpecialFolder.LocalApplicationData/Marmotte.ChatUi/keys`. Garder ce répertoire privé et le sauvegarder séparément de PostgreSQL ; le POC local ne chiffre pas ces fichiers de clés au repos. Voir [persistance](persistence.fr.md) pour schéma, migrations/rollback, concurrence, suppression/conservation, récupération des secrets et commandes de vérification.
 
 ## Configuration et secrets
 

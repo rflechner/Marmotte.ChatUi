@@ -1,8 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" />
-    <EmbeddedResource Include="Migrations/*.sql" />
+    <InternalsVisibleTo Include="Marmotte.ChatUi.Web.Tests" />
     <ProjectReference Include="../Marmotte.ChatUi.Application/Marmotte.ChatUi.Application.csproj" />
     <ProjectReference Include="../Marmotte.ChatUi.Domain/Marmotte.ChatUi.Domain.csproj" />
   </ItemGroup>

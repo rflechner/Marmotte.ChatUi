@@ -115,7 +115,7 @@ Account for the execution topology: localhost refers to the machine or container
 
 ## PostgreSQL persistence and pgvector
 
-The Persistence.PostgreSql assembly contains all relational details: repository implementations, mappings, indexes, migrations, transactions, and provider-specific types. M5 selects parameterized SQL with Npgsql 10.0.0, explicit owner filters, composite owner foreign keys, optimistic conversation revisions, and transaction locks for settings deletion. The [persistence reference](docs/persistence.md) documents mappings, retention, encrypted credentials, key management, startup upgrades, and integration tests.
+The Persistence.PostgreSql assembly contains all relational details: repository implementations, mappings, indexes, migrations, transactions, and provider-specific types. M5 selects EF Core 10.0.12 code first with the Npgsql EF provider 10.0.0, internal persistence entities/configurations, generated migrations and model snapshot, explicit owner filters, composite owner foreign keys, optimistic conversation revisions, and transaction locks for settings deletion. The [persistence reference](docs/persistence.md) documents mappings, retention, encrypted credentials, key management, startup upgrades, and integration tests.
 
 PostgreSQL stores conversations, messages, profiles, preferences, and attachment metadata. Binary storage has a separate port to avoid coupling the domain to a database or file system. The initial adapter and its retention policy will be defined when implementing uploads.
 
@@ -127,7 +127,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 This command enables an already installed extension; it does not install its files on the server. Installation and activation are described in the [official pgvector documentation](https://github.com/pgvector/pgvector#installation).
 
-M3 checks activation on a new volume, idempotence on restart, and repair of an existing database after extension removal, while retaining application and identity probe data. The volume survives container shutdown. Web now applies embedded, checksummed business migrations under a transaction-level advisory lock before serving requests. First-time image scripts do not replace migrations.
+M3 checks activation on a new volume, idempotence on restart, and repair of an existing database after extension removal, while retaining application and identity probe data. The volume survives container shutdown. Web applies generated EF migrations with EF history/locking before serving requests. Each repository operation owns a factory-created context. A one-time compatibility bridge adopts the previous SQL schemas without replacing user data; future schema evolution uses EF migrations. First-time image scripts do not replace migrations.
 
 Embedding dimensions, models, vector indexes, and search rules will be decided alongside a feature that uses them. The initial chat does not require speculative embeddings or a search schema.
 
@@ -185,4 +185,4 @@ Reference images and their provenance are preserved in [docs/images/README.md](d
 
 ## Decisions to finalize
 
-.NET 10, Aspire 13.6.5, the pinned dependencies, and Interactive Server rendering are selected in M1; see the [development guide](docs/development.md) and [operations guide](docs/operations.md). M5 selects SQL/Npgsql and Data Protection for credentials. Binary storage, the PDF rendering engine, and the production target will be specified during their respective implementation stages. These open points do not change the dependency boundaries, PostgreSQL, pgvector, OIDC/Keycloak, or NuGet distribution of the components.
+.NET 10, Aspire 13.6.5, the pinned dependencies, and Interactive Server rendering are selected in M1; see the [development guide](docs/development.md) and [operations guide](docs/operations.md). M5 selects EF Core code first/Npgsql, generated EF migrations, and Data Protection for credentials. Binary storage, the PDF rendering engine, and the production target will be specified during their respective implementation stages. These open points do not change the dependency boundaries, PostgreSQL, pgvector, OIDC/Keycloak, or NuGet distribution of the components.

@@ -105,7 +105,7 @@ References: [ASP.NET Core OIDC](https://learn.microsoft.com/en-us/aspnet/core/se
 
 ## Business persistence and credential keys
 
-With `ConnectionStrings:chatdb` configured, Web registers the application services and runs business migrations before readiness. Aspire supplies this connection automatically. `Persistence:KeyDirectory` selects the absolute directory for Data Protection keys; Aspire can forward `Infrastructure:KeyDirectory`. The default is `Environment.SpecialFolder.LocalApplicationData/Marmotte.ChatUi/keys`. Keep it private and back it up separately from PostgreSQL; the local POC does not encrypt these key files at rest. See [persistence](persistence.md) for the schema, migration/rollback behavior, concurrency, deletion/retention, credential recovery, and verification commands.
+With `ConnectionStrings:chatdb` configured, Web registers the application services and runs generated EF code-first migrations before readiness. Aspire supplies this connection automatically. `Persistence:KeyDirectory` selects the absolute directory for Data Protection keys; Aspire can forward `Infrastructure:KeyDirectory`. The default is `Environment.SpecialFolder.LocalApplicationData/Marmotte.ChatUi/keys`. Keep it private and back it up separately from PostgreSQL; the local POC does not encrypt these key files at rest. See [persistence](persistence.md) for the schema, migration/rollback behavior, concurrency, deletion/retention, credential recovery, and verification commands.
 
 ## Configuration and secrets
 

@@ -8,6 +8,9 @@ using Marmotte.ChatUi.Domain;
 using Marmotte.ChatUi.Persistence.PostgreSql;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
@@ -288,39 +291,121 @@ public sealed class PostgreSqlTests(PostgreSqlFixture fixture) : IClassFixture<P
         var databaseName = $"upgrade_{Guid.NewGuid():N}";
         await ScalarAsync($"CREATE DATABASE {databaseName}");
         var connectionString = new NpgsqlConnectionStringBuilder(fixture.ConnectionString) { Database = databaseName }.ConnectionString;
-        var assembly = typeof(PostgreSqlMigrations).Assembly;
-        var name = Assert.Single(assembly.GetManifestResourceNames(), value => value.EndsWith("001_history_and_settings.sql", StringComparison.Ordinal));
-        using var stream = assembly.GetManifestResourceStream(name)!;
-        using var reader = new StreamReader(stream);
-        var sql = await reader.ReadToEndAsync(Token);
-        await using (var connection = new NpgsqlConnection(connectionString))
+        await using var provider = fixture.Services(connectionString);
+        await using (var context = await provider.GetRequiredService<IDbContextFactory<ChatDbContext>>().CreateDbContextAsync(Token))
         {
-            await connection.OpenAsync(Token);
-            await using var initial = new NpgsqlCommand(sql, connection);
-            await initial.ExecuteNonQueryAsync(Token);
-            await using var history = new NpgsqlCommand("""
-                CREATE TABLE chat.schema_migrations (name text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now());
-                INSERT INTO chat.preferences VALUES ('upgrade-user', 2, NULL, NULL);
-                """, connection);
-            await history.ExecuteNonQueryAsync(Token);
-            await using var version = new NpgsqlCommand("INSERT INTO chat.schema_migrations (name, checksum) VALUES ($1, $2)", connection);
-            version.Parameters.AddWithValue(name);
-            version.Parameters.AddWithValue(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sql))));
-            await version.ExecuteNonQueryAsync(Token);
+            var first = context.Database.GetMigrations().First();
+            await context.GetService<IMigrator>().MigrateAsync(first, Token);
+            await context.Database.ExecuteSqlRawAsync("INSERT INTO chat.preferences VALUES ('upgrade-user', 2, NULL, NULL)", Token);
         }
 
-        await using var provider = fixture.Services(connectionString);
         var migrations = provider.GetRequiredService<PostgreSqlMigrations>();
         await Task.WhenAll(migrations.ApplyAsync(Token), migrations.ApplyAsync(Token));
         await using var scope = provider.CreateAsyncScope();
         Assert.Equal(ThemeMode.Dark, (await scope.ServiceProvider.GetRequiredService<IUserPreferencesRepository>().FindAsync(new UserId("upgrade-user"), Token))!.Theme);
         await using var upgraded = new NpgsqlConnection(connectionString);
         await upgraded.OpenAsync(Token);
-        await using var count = new NpgsqlCommand("SELECT count(*) FROM chat.schema_migrations", upgraded);
+        await using var count = new NpgsqlCommand("SELECT count(*) FROM chat.\"__EFMigrationsHistory\"", upgraded);
         Assert.Equal(2L, await count.ExecuteScalarAsync(Token));
-        await using var drift = new NpgsqlCommand("UPDATE chat.schema_migrations SET checksum = 'tampered'", upgraded);
+        await using var drift = new NpgsqlCommand("INSERT INTO chat.\"__EFMigrationsHistory\" VALUES ('99999999999999_UnknownMigration', '10.0.12')", upgraded);
         await drift.ExecuteNonQueryAsync(Token);
         await ErrorAsync(ChatErrorCode.StorageUnavailable, () => migrations.ApplyAsync(Token));
+    }
+
+    [Theory(Skip = "Requires Docker and MARMOTTE_RUN_INFRASTRUCTURE_TESTS=1.", SkipUnless = nameof(Enabled))]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task Legacy_SQL_databases_adopt_EF_history_without_losing_owned_data(int versionCount)
+    {
+        var connectionString = await CreateLegacyDatabaseAsync(versionCount);
+        await using var provider = fixture.Services(connectionString);
+        await using var scope = provider.CreateAsyncScope();
+        var owner = Owner();
+        var conversations = scope.ServiceProvider.GetRequiredService<IConversationRepository>();
+        var profiles = scope.ServiceProvider.GetRequiredService<IConnectionProfileRepository>();
+        var preferences = scope.ServiceProvider.GetRequiredService<IUserPreferencesRepository>();
+        var credentials = scope.ServiceProvider.GetRequiredService<IModelCredentialStore>();
+        var conversation = Conversation.Create(Guid.NewGuid(), owner, "Legacy history", Now);
+        await conversations.SaveAsync(owner, conversation, 0, Token);
+        var submitted = conversation.RecordMessage(Guid.NewGuid(), "Preserve this message", Now);
+        await conversations.SaveAsync(owner, submitted, 1, Token);
+        var profile = Profile(owner);
+        await profiles.SaveAsync(owner, profile, true, Token);
+        await preferences.SaveAsync(owner, new UserPreferences(owner, ThemeMode.Dark, profile.Id, "selected"), Token);
+        if (versionCount == 2)
+        {
+            await credentials.SaveAsync(owner, profile.Id, new ModelCredential("legacy-secret"), Token);
+        }
+
+        var migrations = provider.GetRequiredService<PostgreSqlMigrations>();
+        await Task.WhenAll(migrations.ApplyAsync(Token), migrations.ApplyAsync(Token));
+        Assert.Equal("Preserve this message", (await conversations.FindAsync(owner, conversation.Id, Token))!.Messages[0].Content);
+        Assert.Equal(profile.Model, (await profiles.FindAsync(owner, profile.Id, Token))!.Model);
+        Assert.Equal(profile.Id, (await preferences.FindAsync(owner, Token))!.SelectedProfileId);
+        if (versionCount == 2)
+        {
+            Assert.Equal("legacy-secret", (await credentials.FindAsync(owner, profile.Id, Token))!.Value);
+        }
+        else
+        {
+            Assert.Null(await credentials.FindAsync(owner, profile.Id, Token));
+            await credentials.SaveAsync(owner, profile.Id, new ModelCredential("new-secret"), Token);
+        }
+
+        await using var context = await provider.GetRequiredService<IDbContextFactory<ChatDbContext>>().CreateDbContextAsync(Token);
+        Assert.Equal(2, (await context.Database.GetAppliedMigrationsAsync(Token)).Count());
+        Assert.False(context.Database.HasPendingModelChanges());
+    }
+
+    [Theory(Skip = "Requires Docker and MARMOTTE_RUN_INFRASTRUCTURE_TESTS=1.", SkipUnless = nameof(Enabled))]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Legacy_baseline_rejects_changed_ledgers_or_missing_columns_without_recording_EF_history(bool changeSchema)
+    {
+        var connectionString = await CreateLegacyDatabaseAsync(2);
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync(Token);
+        await using var alter = new NpgsqlCommand(changeSchema
+            ? "ALTER TABLE chat.profiles DROP COLUMN model"
+            : "UPDATE chat.schema_migrations SET checksum = 'changed'", connection);
+        await alter.ExecuteNonQueryAsync(Token);
+        await using var provider = fixture.Services(connectionString);
+        await ErrorAsync(ChatErrorCode.StorageUnavailable, () => provider.GetRequiredService<PostgreSqlMigrations>().ApplyAsync(Token));
+        await using var history = new NpgsqlCommand("SELECT to_regclass('chat.\"__EFMigrationsHistory\"') IS NULL", connection);
+        Assert.Equal(true, await history.ExecuteScalarAsync(Token));
+    }
+
+    /// <summary>Reproduces the previously shipped SQL schema/ledger only in an isolated test database.</summary>
+    private async Task<string> CreateLegacyDatabaseAsync(int versionCount)
+    {
+        var name = $"legacy_{Guid.NewGuid():N}";
+        await ScalarAsync($"CREATE DATABASE {name}");
+        var connectionString = new NpgsqlConnectionStringBuilder(fixture.ConnectionString) { Database = name }.ConnectionString;
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync(Token);
+        await using var ledger = new NpgsqlCommand("""
+            CREATE SCHEMA chat;
+            CREATE TABLE chat.schema_migrations (name text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())
+            """, connection);
+        await ledger.ExecuteNonQueryAsync(Token);
+        var assembly = typeof(PostgreSqlTests).Assembly;
+        var resources = assembly.GetManifestResourceNames().Where(resource => resource.Contains(".LegacySql.", StringComparison.Ordinal))
+            .Order(StringComparer.Ordinal).Take(versionCount);
+        foreach (var resource in resources)
+        {
+            using var stream = assembly.GetManifestResourceStream(resource)!;
+            using var reader = new StreamReader(stream);
+            var sql = await reader.ReadToEndAsync(Token);
+            await using var migration = new NpgsqlCommand(sql, connection);
+            await migration.ExecuteNonQueryAsync(Token);
+            var originalName = "Marmotte.ChatUi.Persistence.PostgreSql.Migrations." + resource.Split(".LegacySql.")[1];
+            await using var record = new NpgsqlCommand("INSERT INTO chat.schema_migrations (name, checksum) VALUES ($1, $2)", connection);
+            record.Parameters.AddWithValue(originalName);
+            record.Parameters.AddWithValue(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sql))));
+            await record.ExecuteNonQueryAsync(Token);
+        }
+
+        return connectionString;
     }
 
     /// <summary>Installs a principal issued by the real OIDC handler into the host's circuit authentication state.</summary>

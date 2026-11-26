@@ -1,57 +1,52 @@
 using Marmotte.ChatUi.Application.Ports;
 using Marmotte.ChatUi.Contracts;
 using Marmotte.ChatUi.Domain;
-using Npgsql;
-using NpgsqlTypes;
+using Microsoft.EntityFrameworkCore;
 
 namespace Marmotte.ChatUi.Persistence.PostgreSql;
 
-/// <summary>Stores secret-free profiles and serializes deletion with preference and credential writes.</summary>
-internal sealed class ConnectionProfileRepository(Database database) : IConnectionProfileRepository
+/// <summary>Stores secret-free profiles through EF and serializes deletion with selection and credential writes.</summary>
+internal sealed class ConnectionProfileRepository(IDbContextFactory<ChatDbContext> contexts) : IConnectionProfileRepository
 {
-    private const string Columns = "id, name, endpoint, model, temperature, max_output_tokens, created_at, updated_at";
-
     public Task<ConnectionProfile?> FindAsync(UserId ownerId, Guid profileId, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var command = Database.Command(connection,
-            $"SELECT {Columns} FROM chat.profiles WHERE owner_id = $1 AND id = $2", ownerId.Value, profileId);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        return await reader.ReadAsync(cancellationToken).ConfigureAwait(false) ? Read(reader, ownerId) : null;
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var row = await context.Profiles.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.OwnerId == ownerId.Value && item.Id == profileId, cancellationToken).ConfigureAwait(false);
+        return row?.ToDomain();
     });
 
     public Task<Page<ConnectionProfile>> ListAsync(UserId ownerId, PageRequest page, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var command = Database.Command(connection, $"""
-            SELECT {Columns} FROM chat.profiles WHERE owner_id = $1 ORDER BY created_at, id LIMIT $2 OFFSET $3
-            """, ownerId.Value, page.Limit + 1, page.Offset);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        var profiles = new List<ConnectionProfile>();
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-        {
-            profiles.Add(Read(reader, ownerId));
-        }
-
-        return new Page<ConnectionProfile>(profiles.Take(page.Limit).ToArray(), profiles.Count > page.Limit);
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var rows = await context.Profiles.AsNoTracking().Where(row => row.OwnerId == ownerId.Value)
+            .OrderBy(row => row.CreatedAt).ThenBy(row => row.Id).Skip(page.Offset).Take(page.Limit + 1)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        return new Page<ConnectionProfile>(rows.Take(page.Limit).Select(row => row.ToDomain()).ToArray(), rows.Count > page.Limit);
     });
 
     public Task SaveAsync(UserId ownerId, ConnectionProfile profile, bool isNew, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
         Database.RequireOwner(ownerId, profile.OwnerId);
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var command = Database.Command(connection, isNew ? """
-            INSERT INTO chat.profiles (owner_id, id, name, endpoint, model, temperature, max_output_tokens, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            """ : """
-            UPDATE chat.profiles SET name = $3, endpoint = $4, model = $5, temperature = $6, max_output_tokens = $7, updated_at = $9
-            WHERE owner_id = $1 AND id = $2 AND created_at = $8
-            """, ownerId.Value, profile.Id, profile.Name, profile.Endpoint.AbsoluteUri, profile.Model,
-            Database.Nullable(profile.Options.Temperature, NpgsqlDbType.Double),
-            Database.Nullable(profile.Options.MaxOutputTokens, NpgsqlDbType.Integer), profile.CreatedAt, profile.UpdatedAt);
-        if (await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) != 1)
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        if (isNew)
         {
-            throw new ChatOperationException(ChatErrorCode.NotFound);
+            context.Profiles.Add(profile.ToRow());
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            var affected = await context.Profiles.Where(row => row.OwnerId == ownerId.Value && row.Id == profile.Id && row.CreatedAt == profile.CreatedAt)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.Name, profile.Name)
+                    .SetProperty(row => row.Endpoint, profile.Endpoint.AbsoluteUri)
+                    .SetProperty(row => row.Model, profile.Model)
+                    .SetProperty(row => row.Temperature, profile.Options.Temperature)
+                    .SetProperty(row => row.MaxOutputTokens, profile.Options.MaxOutputTokens)
+                    .SetProperty(row => row.UpdatedAt, profile.UpdatedAt), cancellationToken).ConfigureAwait(false);
+            if (affected != 1)
+            {
+                throw new ChatOperationException(ChatErrorCode.NotFound);
+            }
         }
 
         return true;
@@ -59,40 +54,27 @@ internal sealed class ConnectionProfileRepository(Database database) : IConnecti
 
     public Task DeleteAsync(UserId ownerId, Guid profileId, CancellationToken cancellationToken) => Database.RunAsync(async () =>
     {
-        await using var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-        await LockAsync(connection, ownerId, profileId, cancellationToken).ConfigureAwait(false);
-        await using (var clear = Database.Command(connection, """
-            UPDATE chat.preferences SET selected_profile_id = NULL, selected_model = NULL
-            WHERE owner_id = $1 AND selected_profile_id = $2
-            """, ownerId.Value, profileId))
-        {
-            await clear.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        await using (var delete = Database.Command(connection, "DELETE FROM chat.profiles WHERE owner_id = $1 AND id = $2", ownerId.Value, profileId))
-        {
-            await delete.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-        }
-
+        await using var context = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await LockAsync(context, ownerId, profileId, cancellationToken).ConfigureAwait(false);
+        await context.Preferences.Where(row => row.OwnerId == ownerId.Value && row.SelectedProfileId == profileId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.SelectedProfileId, (Guid?)null)
+                .SetProperty(row => row.SelectedModel, (string?)null), cancellationToken).ConfigureAwait(false);
+        await context.Profiles.Where(row => row.OwnerId == ownerId.Value && row.Id == profileId)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return true;
     });
 
-    /// <summary>Locks an existing owned profile until the caller's transaction completes; missing/foreign profiles yield NotFound.</summary>
-    internal static async Task LockAsync(NpgsqlConnection connection, UserId ownerId, Guid profileId, CancellationToken cancellationToken)
+    /// <summary>Locks an owned profile for the caller's transaction; PostgreSQL row locking has no EF LINQ equivalent.</summary>
+    /// <remarks>Parameters remain bound by EF. Missing/foreign profiles yield NotFound.</remarks>
+    internal static async Task LockAsync(ChatDbContext context, UserId ownerId, Guid profileId, CancellationToken cancellationToken)
     {
-        await using var command = Database.Command(connection,
-            "SELECT id FROM chat.profiles WHERE owner_id = $1 AND id = $2 FOR UPDATE", ownerId.Value, profileId);
-        if (await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) is null)
+        var rows = await context.Profiles.FromSqlInterpolated($"SELECT * FROM chat.profiles WHERE owner_id = {ownerId.Value} AND id = {profileId} FOR UPDATE")
+            .AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+        if (rows.Count == 0)
         {
             throw new ChatOperationException(ChatErrorCode.NotFound);
         }
     }
-
-    /// <summary>Restores validated settings from the ordered selection; invalid stored values fail loading.</summary>
-    private static ConnectionProfile Read(NpgsqlDataReader reader, UserId ownerId) => new(reader.GetGuid(0), ownerId,
-        reader.GetString(1), new Uri(reader.GetString(2)), reader.GetString(3),
-        new GenerationOptions(reader.IsDBNull(4) ? null : reader.GetDouble(4), reader.IsDBNull(5) ? null : reader.GetInt32(5)),
-        reader.GetFieldValue<DateTimeOffset>(6), reader.GetFieldValue<DateTimeOffset>(7));
 }

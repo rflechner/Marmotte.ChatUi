@@ -81,7 +81,7 @@ public sealed partial class InfrastructureTests
                 await chat.OpenAsync(cancellationToken);
                 Assert.Equal("0.8.7", await ExecuteScalarAsync(chat, "SELECT extversion FROM pg_extension WHERE extname = 'vector'", cancellationToken));
                 Assert.Equal("marmotte_chat", await ExecuteScalarAsync(chat, "SELECT current_database()", cancellationToken));
-                Assert.Equal(2L, await ExecuteScalarAsync(chat, "SELECT count(*) FROM chat.schema_migrations", cancellationToken));
+                Assert.Equal(2L, await ExecuteScalarAsync(chat, "SELECT count(*) FROM chat.\"__EFMigrationsHistory\"", cancellationToken));
 
                 await using var identity = new NpgsqlConnection(await app.GetConnectionStringAsync("keycloakdb", cancellationToken));
                 await identity.OpenAsync(cancellationToken);

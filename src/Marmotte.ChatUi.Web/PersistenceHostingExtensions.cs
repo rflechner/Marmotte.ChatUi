@@ -58,6 +58,6 @@ internal sealed class PersistenceStartup(PostgreSqlMigrations migrations) : IHos
         await migrations.ApplyAsync(deadline.Token).ConfigureAwait(false);
     }
 
-    /// <summary>Needs no shutdown work; DI disposes the adapter pool after hosted services stop.</summary>
+    /// <summary>Needs no shutdown work; each migration and repository operation disposes its own context.</summary>
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

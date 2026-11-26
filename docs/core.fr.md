@@ -4,7 +4,7 @@
 
 ## Périmètre implémenté
 
-M2 implémente le domaine, les ports indépendants des fournisseurs, les contrats de présentation et les cas d’usage autorisés des conversations et paramètres. Les [tests du cœur](../tests/Marmotte.ChatUi.Core.Tests) les exercent avec un adaptateur de test en mémoire et une horloge contrôlée. M4 enregistre l’adaptateur OIDC scoped `ICurrentUser` dans Web et le teste avec ces cas d’usage. M5 compose ces services avec les repositories PostgreSQL lorsque la base est configurée. Appels de modèles, uploads et orchestration de génération restent non implémentés. Voir [persistance](persistence.fr.md) pour le schéma et le comportement des adaptateurs.
+M2 implémente le domaine, les ports indépendants des fournisseurs, les contrats de présentation et les cas d’usage autorisés des conversations et paramètres. Les [tests du cœur](../tests/Marmotte.ChatUi.Core.Tests) les exercent avec un adaptateur de test en mémoire et une horloge contrôlée. M4 enregistre l’adaptateur OIDC scoped `ICurrentUser` dans Web et le teste avec ces cas d’usage. M5 compose ces services avec les repositories EF Core/PostgreSQL lorsque la base est configurée ; entités et contextes EF restent dans l’adaptateur de persistance. Appels de modèles, uploads et orchestration de génération restent non implémentés. Voir [persistance](persistence.fr.md) pour le schéma et le comportement des adaptateurs.
 
 Le modèle d’IA est le modèle distant choisi dans un profil de connexion. Le modèle métier ci-dessous décrit le comportement de l’application sans dépendre de ce fournisseur, de Blazor ou des bibliothèques de persistance. Domain et Contracts n’ont aucune dépendance de projet ou de package ; Application référence seulement Domain et Contracts.
 

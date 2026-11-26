@@ -121,7 +121,7 @@ M1 through M5 are complete: solution foundations, the domain and authorized use 
 
 **Dependencies:** [M2](#milestone-2), [M3](#milestone-3), [M4](#milestone-4).
 
-- [x] **5.1** — Choose and document the data access approach, keeping ORM or SQL dependencies inside Persistence.PostgreSql.
+- [x] **5.1** — Use EF Core code first with generated migrations, keeping ORM and provider dependencies inside Persistence.PostgreSql.
 - [x] **5.2** — Define mappings, keys, indexes, and migrations for conversations, messages, profiles, preferences, and attachment metadata, without speculative embedding tables.
 - [x] **5.3** — Implement repository operations with user scoping, pagination, cancellation, and internal domain/DTO mapping; expose no database-specific types.
 - [x] **5.4** — Define transaction and concurrency behavior for message ordering, partial generations, repeated submissions, and attachment references.
@@ -132,7 +132,7 @@ M1 through M5 are complete: solution foundations, the domain and authorized use 
 
 **Exit criterion:** An authenticated user's history and settings survive an application restart, with migrations, paging, and isolation verified against PostgreSQL.
 
-**Validation (2026-11-26):** On macOS ARM64 with SDK 10.0.401, locked restore, Release build (zero warnings/errors), formatting/analyzers, and all 83 routine tests pass. The eight opt-in PostgreSQL tests pass, including authenticated host/database restart, credential recovery and missing-key/tamper rejection, owner isolation, paging, concurrent revisions, deletion/retention, cancellation under a lock, and upgrade from schema 001. The real Aspire test also passes its three-start pgvector/Keycloak/business-migration checks. CI now includes the PostgreSQL suite; no GitHub Actions execution or production deployment is claimed. Whole-history writes, local unencrypted key files, and deferred UI/upload/recovery work are documented in [persistence](docs/persistence.md).
+**Validation (2026-11-26):** On macOS ARM64 with SDK 10.0.401, locked restore, Release build (zero warnings/errors), formatting/analyzers, and all 84 routine tests pass, including EF model/snapshot agreement. The twelve opt-in PostgreSQL tests pass, including authenticated host/database restart, credential recovery and missing-key/tamper rejection, owner isolation, paging, concurrent revisions, deletion/retention, cancellation under a lock, upgrades between EF migrations, and adoption of both former SQL schemas with retained history/settings/secrets and drift rejection. The real Aspire test also passes its three-start pgvector/Keycloak/business-migration checks. The pinned EF CLI successfully lists migrations, checks the snapshot, updates a fresh database twice, and generates an idempotent script applied twice to a separate fresh database. CI includes the PostgreSQL suite and model-drift check; no GitHub Actions execution or production deployment is claimed. Whole-history writes, local unencrypted key files, and deferred UI/upload/recovery work are documented in [persistence](docs/persistence.md).
 
 <a id="milestone-6"></a>
 
