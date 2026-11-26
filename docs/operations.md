@@ -4,7 +4,7 @@ English | [Français](operations.fr.md)
 
 ## Implemented scope
 
-M3 supplies local Aspire orchestration, PostgreSQL with pgvector, a persistent Keycloak realm/client, and Web health/telemetry defaults. M4 adds OIDC sign-in/sign-out, a protected workspace, and server session/ownership checks. M5 adds business repositories, migrations, and protected model credentials. Model calls (M6) and uploads remain unimplemented. No production deployment is configured.
+M3 supplies local Aspire orchestration, PostgreSQL with pgvector, a persistent Keycloak realm/client, and Web health/telemetry defaults. M4 adds OIDC sign-in/sign-out, a protected workspace, and server session/ownership checks. M5 adds business repositories, migrations, and protected model credentials. M6 adds the text model adapter; uploads remain unimplemented. See [models](models.md) for configuration and compatibility. No production deployment is configured.
 
 ## Local startup and shutdown
 
@@ -141,13 +141,13 @@ AppHost injects `ConnectionStrings__chatdb`, Keycloak service-discovery endpoint
 
 ## Health and diagnostics
 
-ServiceDefaults registers service discovery for `HttpClient`, a 30-second default HTTP timeout, runtime/server/client HTTP metrics and traces, and optional OTLP export when `OTEL_EXPORTER_OTLP_ENDPOINT` is configured by Aspire. It adds no automatic retries; model generation will define its own timeouts/cancellation in its adapter. Body/custom-header capture, SQL instrumentation, exception recording in HTTP traces, and OpenTelemetry log export are not enabled. HTTP instrumentation keeps its default query-value redaction; do not disable it or include secrets/content in URL paths. Application logging must continue to avoid conversations, file contents, base64 data, and credentials.
+ServiceDefaults registers service discovery for `HttpClient`, a 30-second default HTTP timeout, runtime/server/client HTTP metrics and traces, and optional OTLP export when `OTEL_EXPORTER_OTLP_ENDPOINT` is configured by Aspire. It adds no automatic retries; model generation uses its own total deadline (120 seconds by default, configured by `Models:OperationTimeoutSeconds`). Body/custom-header capture, SQL instrumentation, exception recording in HTTP traces, and OpenTelemetry log export are not enabled. HTTP instrumentation keeps its default query-value redaction; do not disable it or include secrets/content in URL paths. Application logging must continue to avoid conversations, file contents, base64 data, and credentials.
 
 In Development, `/alive` runs only checks tagged `live`; `/health` runs all registered checks and returns 503 on failure. Responses contain only status, without diagnostic details. Polling these endpoints is excluded from HTTP traces. Web currently checks only itself: Aspire startup gates verify dependencies, while ongoing repository/OIDC dependency health checks remain unimplemented. Neither endpoint is mapped in Production. `Logging:LogLevel` controls console diagnostics; no request-body logging is configured. Treat dashboard access as privileged because it can expose resource configuration and secrets.
 
 ## Model-server network topology
 
-Web runs as a host process, so a future model URL using `localhost` refers to this development computer. Use the actual model server's configured address and port; M3 makes no model request or compatibility claim. Inside a container, `localhost` refers to that container. A future containerized adapter must use an Aspire-provided endpoint or the container engine's host gateway (for example `host.docker.internal` where supported), with a server listening on a reachable interface and suitable firewall/authentication settings. A model server on another computer needs that computer's reachable address. These settings never follow the browser's location automatically. On 2026-11-26, a temporary HTTP probe on this macOS ARM64/Rancher Desktop host was reached both from a host process through loopback and from the pinned PostgreSQL image through `host.docker.internal`. This verifies that local network route, not LM Studio/Unsloth API behavior or other container engines.
+Web runs as a host process, so a model URL using `localhost` refers to this development computer. Use the actual model server's configured address and port; M3 makes no model request or compatibility claim. Inside a container, `localhost` refers to that container. A future containerized adapter must use an Aspire-provided endpoint or the container engine's host gateway (for example `host.docker.internal` where supported), with a server listening on a reachable interface and suitable firewall/authentication settings. A model server on another computer needs that computer's reachable address. These settings never follow the browser's location automatically. On 2026-11-26, a temporary HTTP probe on this macOS ARM64/Rancher Desktop host was reached both from a host process through loopback and from the pinned PostgreSQL image through `host.docker.internal`. This verifies that local network route, not LM Studio/Unsloth API behavior or other container engines.
 
 ## Verification and troubleshooting
 
@@ -162,5 +162,5 @@ The opt-in [infrastructure test](../tests/Marmotte.ChatUi.Infrastructure.Tests/I
 - Test interruption: a force-killed test process may leave a `marmotte-infrastructure-test-*` volume. Inspect its exact name and ensure no container uses it before removing that test volume; never prune all volumes.
 - Sign-in unavailable: verify all three `Authentication` settings, discovery reachability from Web, matching client secrets on existing realms, and the registered redirect origin. The error page omits provider diagnostics.
 - Repeated sign-in: ID-token expiry may be earlier than the session ceiling; sign in again. A Web restart also ends all sessions.
-- Repository settings appear inactive: configure `ConnectionStrings:chatdb` and verify startup migrations. Settings screens and model calls remain M8/M6 work.
+- Repository settings appear inactive: configure `ConnectionStrings:chatdb` and verify startup migrations. Settings screens remain M8 work; model ports are registered when persistence is configured.
 - Credential recovery fails after restore: restore the matching Data Protection key directory and application name; without the old keys, replace the affected model credentials.

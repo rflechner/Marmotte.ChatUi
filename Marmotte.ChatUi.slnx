@@ -14,6 +14,8 @@
     <File Path="roadmap.md" />
   </Folder>
   <Folder Name="/docs/">
+    <File Path="docs/models.md" />
+    <File Path="docs/models.fr.md" />
     <File Path="docs\core.fr.md" />
     <File Path="docs\core.md" />
     <File Path="docs\development.fr.md" />
@@ -37,6 +39,7 @@
     <Project Path="src/Marmotte.ChatUi.ServiceDefaults/Marmotte.ChatUi.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Marmotte.ChatUi.OpenAI.Tests/Marmotte.ChatUi.OpenAI.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Core.Tests/Marmotte.ChatUi.Core.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Architecture.Tests/Marmotte.ChatUi.Architecture.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Web.Tests/Marmotte.ChatUi.Web.Tests.csproj" />

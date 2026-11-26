@@ -10,6 +10,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.AddHostIdentity();
 builder.AddHostPersistence();
+builder.AddHostModels();
 
 var app = builder.Build();
 

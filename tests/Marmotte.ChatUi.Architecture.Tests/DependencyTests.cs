@@ -105,6 +105,18 @@ public sealed class DependencyTests
         }
     }
 
+    [Fact]
+    public void Only_the_model_adapter_directly_references_the_OpenAI_package()
+    {
+        foreach (var projectName in AllowedReferences.Keys)
+        {
+            var project = XDocument.Load(GetProjectPath(projectName));
+            var referencesSdk = project.Descendants("PackageReference")
+                .Any(reference => reference.Attribute("Include")?.Value == "OpenAI");
+            Assert.Equal(projectName == "Infrastructure.OpenAI", referencesSdk);
+        }
+    }
+
     /// <summary>Resolves a source project by its assembly suffix using the repository's established directory layout.</summary>
     private static string GetProjectPath(string name)
     {

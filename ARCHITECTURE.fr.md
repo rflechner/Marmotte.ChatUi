@@ -4,7 +4,7 @@
 
 ## Statut et objectif
 
-Ce document distingue le socle M1–M5 implémenté de l’architecture produit cible. Les neuf projets sources, l’hôte Blazor Interactive Server, le domaine et ses cas d’usage autorisés, l’infrastructure locale Aspire et l’adaptateur d’identité OIDC existent désormais. PostgreSQL/pgvector et Keycloak démarrent avec données persistantes et contrôles de disponibilité ; ServiceDefaults fournit les diagnostics. Web authentifie les utilisateurs et protège l’espace de travail et l’endpoint de circuit. M5 compose les cas d’usage métier avec des repositories PostgreSQL lorsqu’une base est configurée, avec migrations et secrets de modèle protégés. Les adaptateurs de modèles, composants de chat réutilisables et publication NuGet restent prévus.
+Ce document distingue le socle M1–M5 implémenté de l’architecture produit cible. Les neuf projets sources, l’hôte Blazor Interactive Server, le domaine et ses cas d’usage autorisés, l’infrastructure locale Aspire et l’adaptateur d’identité OIDC existent désormais. PostgreSQL/pgvector et Keycloak démarrent avec données persistantes et contrôles de disponibilité ; ServiceDefaults fournit les diagnostics. Web authentifie les utilisateurs et protège l’espace de travail et l’endpoint de circuit. M5 compose les cas d’usage métier avec des repositories PostgreSQL lorsqu’une base est configurée, avec migrations et secrets de modèle protégés. M6 ajoute l’adaptateur texte, vérifié avec LM Studio ; les validations Unsloth et vision restent ouvertes. Les composants de chat réutilisables et la publication NuGet restent prévus.
 
 Marmotte.ChatUi vise deux usages : une application de chat en .NET et Blazor, inspirée d’AnythingLLM et d’Open WebUI, et une bibliothèque de composants et widgets intégrables dans d’autres applications. L’application complète utilisera les mêmes composants que ceux distribués en NuGet.
 
@@ -35,7 +35,7 @@ Les frontières importantes correspondent à des assemblies distinctes. Il s’a
 
 ### Découpage cible
 
-Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Persistence.PostgreSql implémente M5 ; Infrastructure.OpenAI et Components établissent encore les frontières sans leurs futures implémentations. AppHost et ServiceDefaults implémentent l’orchestration et les diagnostics M3. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
+Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Persistence.PostgreSql implémente M5 et Infrastructure.OpenAI implémente l’adaptateur texte M6. Components établit encore la frontière de sa future implémentation. AppHost et ServiceDefaults implémentent l’orchestration et les diagnostics M3. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
 
 | Projet / assembly | Responsabilité | Dépendances internes principales |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ M2 implémente `Conversation` comme agrégat immuable contrôlant les paires de 
 
 L’application expose la création, pagination, lecture, suppression, soumission de texte, enregistrement/annulation des réponses et gestion des paramètres avec autorisation. L’identité courante et les repositories sont des ports ; chaque opération tire le propriétaire d’une identité serveur vérifiée et contrôle les propriétaires renvoyés. Les secrets des profils sont absents de ces contrats.
 
-Les écritures de conversation comparent les révisions et valident atomiquement les messages et références de pièces jointes. Les listes sont bornées et ordonnées ; le chargement d’une conversation matérialise actuellement tout l’historique. Les repositories n’exposent aucun type de base de données. Les ports de fournisseur définissent les capacités et flux de réponse, sans appel de modèle concret ni orchestration. Les ports de stockage binaire et préparation multimodale restent pour M9/M11.
+Les écritures de conversation comparent les révisions et valident atomiquement les messages et références de pièces jointes. Les listes sont bornées et ordonnées ; le chargement d’une conversation matérialise actuellement tout l’historique. Les repositories n’exposent aucun type de base de données. Les ports de fournisseur définissent capacités, contrôles de connexion, découverte des modèles et flux de réponse. M6 fournit l’adaptateur texte concret ; orchestration/persistance des générations restent pour M8. Les ports de stockage binaire et préparation multimodale restent pour M9/M11.
 
 Consulter la [référence du cœur](docs/core.fr.md) pour les invariants, transitions, API publiques, annulation, cohérence, durées de vie et limites. M4 vérifie l’identité OIDC et le refus d’accès entre utilisateurs avec des repositories de test. M5 vérifie le contrôle sur de véritables enregistrements PostgreSQL et des utilisateurs authentifiés ; l’accès binaire aux pièces jointes reste pour M9.
 
@@ -103,13 +103,13 @@ La configuration locale de Keycloak n’est pas assimilée à une configuration 
 
 Les paramètres couvrent le nom du profil, l’URL de base, le modèle, les options utiles et l’authentification si le serveur l’exige. Prévoir un test de connexion et une découverte des modèles lorsque le serveur le permet, avec saisie manuelle possible.
 
-Le [package NuGet OpenAI](https://www.nuget.org/packages/OpenAI) est le candidat privilégié demandé pour l’adaptateur. Le [SDK officiel .NET documente les endpoints personnalisés](https://github.com/openai/openai-dotnet#using-a-custom-base-url-and-api-key). Son adoption sera confirmée par un essai des besoins réels sur LM Studio et Unsloth Desktop ; aucune version n’est encore fixée ni installée.
+M6 adopte [OpenAI 2.15.0](https://www.nuget.org/packages/OpenAI/2.15.0) pour des endpoints Chat Completions et Models configurables. Les tests HTTP contrôlés et les essais LM Studio valident le sous-ensemble texte. Le constructeur d’authentification personnalisé expérimental est isolé avec une suppression ciblée pour que les appels sans clé n’envoient aucun en-tête Authorization. Les essais réels Unsloth sont différés. Voir la [référence de l’adaptateur](docs/models.fr.md) pour la décision, les garanties, la matrice exacte de compatibilité et les limites.
 
 Le SDK reste confiné à Infrastructure.OpenAI. Ses messages, résultats et exceptions sont traduits en contrats internes. Vérifier séparément le chat, le streaming, l’annulation, la découverte des modèles, la vision et l’authentification optionnelle. La présence d’une API Responses ou Files n’est pas déduite de la seule compatibilité OpenAI.
 
-Privilégier le sous-ensemble de conversation réellement commun aux serveurs ciblés. Une contrainte de credential du SDK ne doit pas obliger l’utilisateur à inventer une clé dans les paramètres si son serveur local n’en requiert pas ; la stratégie technique sera vérifiée et encapsulée dans l’adaptateur.
+Privilégier le sous-ensemble de conversation réellement commun aux serveurs ciblés. Une contrainte de credential du SDK ne doit pas obliger l’utilisateur à inventer une clé dans les paramètres si son serveur local n’en requiert pas ; la politique d’authentification personnalisée de l’adaptateur réalise ce comportement sans clé factice.
 
-Un profil est associé à son utilisateur et ne partage pas implicitement ses secrets avec les autres. Les identifiants des modèles sont distincts de la connexion OIDC à l’application.
+Un profil est associé à son utilisateur et ne partage pas implicitement ses secrets avec les autres. Chaque opération revérifie propriété/paramètres persistés avant de récupérer les secrets ; les clients SDK sont propres à l’opération. Web partage un adaptateur par scope utilisateur, désactive redirections/cookies/retries HTTP et configure une échéance totale de 120 secondes par défaut. Le streaming exige une sonde réussie récente ; les images restent Unknown et toutes les pièces jointes sont refusées jusqu’à M9. Les identifiants des modèles sont distincts de la connexion OIDC à l’application.
 
 Attention à la topologie d’exécution : localhost désigne la machine ou le conteneur exécutant l’adaptateur, pas nécessairement l’ordinateur du navigateur. Documenter et tester l’accès aux serveurs locaux depuis la configuration Aspire retenue.
 

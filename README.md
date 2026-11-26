@@ -13,13 +13,13 @@ A .NET and Blazor chat application, with reusable components for embedding conve
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="The marmot mascot holding an Experimental Proof of Concept sign" width="320" />
 
-Milestones 1 through 5 are implemented: .NET 10/Blazor foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC sign-in/sign-out with Keycloak and user isolation. Web provides a public landing page and a protected workspace. PostgreSQL now persists history, settings, attachment metadata, and protected model credentials, using EF Core code first and startup migrations. Model adapters and reusable chat components remain for later milestones. No NuGet package has been published.
+Milestones 1 through 5 are implemented: .NET 10/Blazor foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC sign-in/sign-out with Keycloak and user isolation. Web provides a public landing page and a protected workspace. PostgreSQL now persists history, settings, attachment metadata, and protected model credentials, using EF Core code first and startup migrations. The M6 text model adapter is implemented and tested against LM Studio; Unsloth and vision validation remain open. Reusable chat components remain for later milestones. No NuGet package has been published.
 
 ## Product direction
 
 - Blazor components intended for distribution through NuGet.
 - Chat and connection settings for OpenAI-compatible APIs, including LM Studio and Unsloth Desktop.
-- The OpenAI .NET SDK considered for an independent adapter.
+- OpenAI .NET SDK 2.15.0 isolated inside the model adapter.
 - Conversation history and user preferences in PostgreSQL, with pgvector available.
 - A complete application with OIDC/Keycloak authentication and .NET Aspire orchestration.
 - A customizable design system, light and dark modes, and image uploads through file selection and drag and drop.
@@ -31,6 +31,7 @@ Milestones 1 through 5 are implemented: .NET 10/Blazor foundations, the domain a
 - [Architecture and scope](ARCHITECTURE.md)
 - [Domain model, ports, and use cases](docs/core.md)
 - [PostgreSQL, migrations, and credential keys](docs/persistence.md)
+- [Model adapter, configuration, and compatibility](docs/models.md)
 - [Contribution guidelines](AGENTS.md)
 - [Mascot and image provenance](docs/images/README.md)
 

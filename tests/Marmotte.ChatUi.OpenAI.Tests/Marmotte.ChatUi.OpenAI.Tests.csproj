@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marmotte.ChatUi.Infrastructure.OpenAI/Marmotte.ChatUi.Infrastructure.OpenAI.csproj" />
+  </ItemGroup>
+</Project>

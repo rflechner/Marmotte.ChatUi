@@ -8,7 +8,7 @@ Cette feuille de route décline les décisions de [l’architecture](ARCHITECTUR
 
 ## Point de départ
 
-M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire, identité OIDC avec sessions serveur et isolation utilisateur, et persistance PostgreSQL avec secrets protégés. Sur les 82 tâches ci-dessous, 34 sont terminées et 48 restent ouvertes. L’UI de chat, les intégrations de modèles et la publication NuGet restent prévues.
+M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire, identité OIDC avec sessions serveur et isolation utilisateur, et persistance PostgreSQL avec secrets protégés. L’adaptateur texte M6 est implémenté et vérifié avec LM Studio. Sur les 82 tâches ci-dessous, 41 sont terminées et 41 restent ouvertes. L’UI de chat et la publication NuGet restent prévues ; la matrice de compatibilité des modèles restante est suivie en 6.8.
 
 ## Périmètre et suivi
 
@@ -142,16 +142,18 @@ M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autoris
 
 **Dépendances:** [M2](#milestone-2), [M5](#milestone-5).
 
-- [ ] **6.1** — Évaluer le package NuGet OpenAI sur les endpoints et comportements d’authentification nécessaires ; confirmer son adoption et sa version ou documenter les incompatibilités bloquantes.
-- [ ] **6.2** — Implémenter les endpoints configurables et traduire les requêtes, réponses et exceptions du SDK en contrats internes dans Infrastructure.OpenAI.
-- [ ] **6.3** — Implémenter le streaming, l’annulation, les délais et les erreurs après réponse partielle ; éviter les tentatives automatiques dupliquant un message ou une génération.
-- [ ] **6.4** — Implémenter le test de connexion et la découverte des modèles, avec saisie manuelle lorsque la découverte est indisponible.
-- [ ] **6.5** — Valider les adresses, identifiants de modèles et options des profils ; prendre en charge les serveurs avec ou sans authentification sans imposer de clé fictive à l’utilisateur.
-- [ ] **6.6** — Représenter les capacités vérifiées des serveurs et modèles, notamment la vision, sans supposer que tout endpoint compatible OpenAI prend en charge toutes les API.
-- [ ] **6.7** — Associer correctement les clients et identifiants d’accès à leur utilisateur ou profil et documenter les endpoints selon l’exécution sur l’hôte ou dans un conteneur.
+- [x] **6.1** — Évaluer le package NuGet OpenAI sur les endpoints et comportements d’authentification nécessaires ; confirmer son adoption et sa version ou documenter les incompatibilités bloquantes.
+- [x] **6.2** — Implémenter les endpoints configurables et traduire les requêtes, réponses et exceptions du SDK en contrats internes dans Infrastructure.OpenAI.
+- [x] **6.3** — Implémenter le streaming, l’annulation, les délais et les erreurs après réponse partielle ; éviter les tentatives automatiques dupliquant un message ou une génération.
+- [x] **6.4** — Implémenter le test de connexion et la découverte des modèles, avec saisie manuelle lorsque la découverte est indisponible.
+- [x] **6.5** — Valider les adresses, identifiants de modèles et options des profils ; prendre en charge les serveurs avec ou sans authentification sans imposer de clé fictive à l’utilisateur.
+- [x] **6.6** — Représenter les capacités vérifiées des serveurs et modèles, notamment la vision, sans supposer que tout endpoint compatible OpenAI prend en charge toutes les API.
+- [x] **6.7** — Associer correctement les clients et identifiants d’accès à leur utilisateur ou profil et documenter les endpoints selon l’exécution sur l’hôte ou dans un conteneur.
 - [ ] **6.8** — Ajouter des tests de contrat avec des réponses contrôlées, puis consigner les vérifications réelles du texte, du streaming, de l’authentification, de la découverte et de la vision sur LM Studio et Unsloth Desktop.
 
 **Critère de validation:** L’adaptateur échange des messages avec les deux serveurs cibles à partir de profils configurables, tandis que le cœur et les composants restent indépendants du SDK.
+
+**Validation M6 (2026-11-26) :** Restauration verrouillée, compilation Release, formatage/analyseurs, 138 tests courants (dont 52 tests d’adaptateur) et contrôles des documents/liens bilingues passent sur macOS ARM64 avec SDK 10.0.401. Les treize tests dépendant de Docker n’ont pas été relancés pour cette modification ; le test modèle est optionnel et a tourné séparément. OpenAI 2.15.0 est adopté derrière les ports internes, avec autorisation/secrets scoped, authentification facultative, découverte/saisie manuelle, contrôles streaming explicites, annulation, échéances totales et aucun retry. Les tests HTTP contrôlés exercent le vrai SDK. Le test optionnel passe avec LM Studio (application installée `0.4.28+2`), `lfm3-1.7b`, `http://127.0.0.1:1234/v1`, sans authentification : découverte, texte, streaming et annulation cliente. Unsloth est différé à la demande de l’utilisateur ; aucun essai réel de serveur authentifié ou de vision n’est revendiqué. La tâche 6.8 et le critère de sortie initial à deux serveurs restent ouverts. Voir [modèles](docs/models.fr.md) pour les commandes vérifiées, les preuves de capacités, la réserve SDK et la matrice de compatibilité. Aucune UI de chat, intégration de persistance des générations, publication NuGet ou mise en production n’est revendiquée.
 
 <a id="milestone-7"></a>
 

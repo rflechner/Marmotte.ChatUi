@@ -4,7 +4,7 @@ English | [Français](ARCHITECTURE.fr.md)
 
 ## Status and purpose
 
-This document distinguishes the implemented M1–M5 foundations from the target product architecture. The nine source projects, Interactive Server Blazor host, domain and authorized use cases, local Aspire infrastructure, and OIDC identity adapter now exist. PostgreSQL/pgvector and Keycloak start with persistent data and readiness checks; ServiceDefaults supplies diagnostics. Web authenticates users and protects its workspace and circuit endpoint. M5 composes the business use cases with PostgreSQL repositories when a database is configured, including migrations and protected model credentials. Model adapters, reusable chat components, and NuGet publication remain planned.
+This document distinguishes the implemented M1–M5 foundations from the target product architecture. The nine source projects, Interactive Server Blazor host, domain and authorized use cases, local Aspire infrastructure, and OIDC identity adapter now exist. PostgreSQL/pgvector and Keycloak start with persistent data and readiness checks; ServiceDefaults supplies diagnostics. Web authenticates users and protects its workspace and circuit endpoint. M5 composes the business use cases with PostgreSQL repositories when a database is configured, including migrations and protected model credentials. M6 adds the text model adapter, verified against LM Studio; Unsloth and vision validation remain open. Reusable chat components and NuGet publication remain planned.
 
 Marmotte.ChatUi serves two purposes: a .NET and Blazor chat application inspired by AnythingLLM and Open WebUI, and a library of components and widgets that can be embedded in other applications. The complete application will use the same components distributed through NuGet.
 
@@ -35,7 +35,7 @@ Important boundaries correspond to separate assemblies. The initial design is a 
 
 ### Target structure
 
-All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, and Application implement M2. Persistence.PostgreSql implements M5; Infrastructure.OpenAI and Components still establish boundaries without their future implementations. AppHost and ServiceDefaults implement M3 orchestration and diagnostics. Web references ServiceDefaults in addition to the dependencies listed below.
+All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, and Application implement M2. Persistence.PostgreSql implements M5 and Infrastructure.OpenAI implements the M6 text adapter. Components still establishes the boundary for its future implementation. AppHost and ServiceDefaults implement M3 orchestration and diagnostics. Web references ServiceDefaults in addition to the dependencies listed below.
 
 | Project / assembly | Responsibility | Main internal dependencies |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ M2 implements `Conversation` as an immutable aggregate owning ordered user/assis
 
 The application exposes authorized creation, paging, loading, deletion, text submission, response recording/cancellation, and settings management. Current identity and repositories are ports; every operation derives ownership from trusted server identity and verifies returned owners. Profile secrets are absent from these contracts.
 
-Conversation writes compare revisions and atomically commit messages and attachment references. Lists are bounded and ordered; full conversation loading currently materializes the whole history. Repository contracts expose no database types. Provider ports define capabilities and response streams, with no concrete model call or orchestrator yet. Binary storage and multimodal preparation ports remain for M9/M11.
+Conversation writes compare revisions and atomically commit messages and attachment references. Lists are bounded and ordered; full conversation loading currently materializes the whole history. Repository contracts expose no database types. Provider ports define capabilities, connection checks, model discovery, and response streams. M6 supplies the concrete text adapter; generation orchestration/persistence remains M8 work. Binary storage and multimodal preparation ports remain for M9/M11.
 
 See the [core reference](docs/core.md) for invariants, transitions, public APIs, cancellation, consistency, lifetimes, and limitations. M4 verifies OIDC identity and cross-user denial with test repositories. M5 verifies enforcement against actual PostgreSQL records and authenticated users; binary attachment access remains M9 work.
 
@@ -103,13 +103,13 @@ The local Keycloak configuration is not a production configuration. The hosting 
 
 Settings cover the profile name, base URL, model, relevant options, and authentication when required by the server. Provide a connection test and model discovery where supported, with manual entry available.
 
-The [OpenAI NuGet package](https://www.nuget.org/packages/OpenAI) is the preferred candidate requested for the adapter. The [official .NET SDK documents custom endpoints](https://github.com/openai/openai-dotnet#using-a-custom-base-url-and-api-key). Adoption will be confirmed by testing actual requirements against LM Studio and Unsloth Desktop; no version has been pinned or installed yet.
+M6 adopts [OpenAI 2.15.0](https://www.nuget.org/packages/OpenAI/2.15.0) for configurable Chat Completions and Models endpoints. Controlled HTTP tests and LM Studio checks validate the text subset. The experimental custom-auth constructor is isolated and narrowly suppressed so keyless requests send no Authorization header. Unsloth runtime checks are deferred. See the [adapter reference](docs/models.md) for the decision, API guarantees, exact compatibility matrix, and limits.
 
 The SDK stays confined to Infrastructure.OpenAI. Its messages, results, and exceptions are translated into internal contracts. Verify chat, streaming, cancellation, model discovery, vision, and optional authentication separately. OpenAI compatibility alone does not imply the availability of the Responses or Files API.
 
-Prefer the conversation subset actually shared by the target servers. An SDK credential requirement must not force users to invent a key in the settings when their local server does not require one; the technical approach will be verified and encapsulated in the adapter.
+Prefer the conversation subset actually shared by the target servers. An SDK credential requirement must not force users to invent a key in the settings when their local server does not require one; the adapter’s custom authentication policy implements this behavior without a placeholder key.
 
-A profile belongs to its user and does not implicitly share its secrets with others. Model credentials are separate from OIDC sign-in to the application.
+A profile belongs to its user and does not implicitly share its secrets with others. Each operation revalidates persisted ownership/settings before resolving credentials; SDK clients are operation-local. Web shares one adapter per user scope, disables HTTP redirects/cookies/retries, and configures a total deadline of 120 seconds by default. Streaming requires recent successful probe evidence; images stay Unknown and all attachments are rejected until M9. Model credentials are separate from OIDC sign-in to the application.
 
 Account for the execution topology: localhost refers to the machine or container running the adapter, not necessarily the browser's computer. Document and test access to local servers from the chosen Aspire configuration.
 

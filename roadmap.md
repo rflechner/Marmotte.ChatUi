@@ -8,7 +8,7 @@ This roadmap turns the [architecture decisions](ARCHITECTURE.md) into actionable
 
 ## Starting point
 
-M1 through M5 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, OIDC identity with server-side session and user isolation, and PostgreSQL persistence with protected credentials. Of the 82 tasks below, 34 are complete and 48 remain open. Chat UI, model integrations, and NuGet publication remain planned.
+M1 through M5 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, OIDC identity with server-side session and user isolation, and PostgreSQL persistence with protected credentials. The M6 text adapter is implemented and verified with LM Studio. Of the 82 tasks below, 41 are complete and 41 remain open. Chat UI and NuGet publication remain planned; the remaining model compatibility matrix is tracked in 6.8.
 
 ## Scope and tracking
 
@@ -142,16 +142,18 @@ M1 through M5 are complete: solution foundations, the domain and authorized use 
 
 **Dependencies:** [M2](#milestone-2), [M5](#milestone-5).
 
-- [ ] **6.1** — Evaluate the OpenAI NuGet package against the required endpoints and credential behavior; confirm its adoption and version or document any blocking compatibility issue.
-- [ ] **6.2** — Implement configurable endpoints and translate SDK requests, responses, and exceptions to internal contracts inside Infrastructure.OpenAI.
-- [ ] **6.3** — Implement streaming, cancellation, timeouts, and partial-error handling; avoid automatic retries that duplicate a message or generation.
-- [ ] **6.4** — Implement connection checks and model discovery with manual model entry when discovery is unavailable.
-- [ ] **6.5** — Validate profile addresses, model identifiers, and options; support servers with and without authentication without requiring users to invent a key.
-- [ ] **6.6** — Represent verified server/model capabilities, especially vision, instead of assuming that every OpenAI-compatible endpoint supports all APIs.
-- [ ] **6.7** — Keep clients and credentials correctly scoped to their user/profile and document host/container endpoint configuration.
+- [x] **6.1** — Evaluate the OpenAI NuGet package against the required endpoints and credential behavior; confirm its adoption and version or document any blocking compatibility issue.
+- [x] **6.2** — Implement configurable endpoints and translate SDK requests, responses, and exceptions to internal contracts inside Infrastructure.OpenAI.
+- [x] **6.3** — Implement streaming, cancellation, timeouts, and partial-error handling; avoid automatic retries that duplicate a message or generation.
+- [x] **6.4** — Implement connection checks and model discovery with manual model entry when discovery is unavailable.
+- [x] **6.5** — Validate profile addresses, model identifiers, and options; support servers with and without authentication without requiring users to invent a key.
+- [x] **6.6** — Represent verified server/model capabilities, especially vision, instead of assuming that every OpenAI-compatible endpoint supports all APIs.
+- [x] **6.7** — Keep clients and credentials correctly scoped to their user/profile and document host/container endpoint configuration.
 - [ ] **6.8** — Add adapter contract tests with controlled responses, then record actual text, streaming, authentication, discovery, and vision checks on LM Studio and Unsloth Desktop.
 
 **Exit criterion:** The adapter exchanges messages with both target servers using configurable profiles, while the core and components remain independent of the SDK.
+
+**M6 validation (2026-11-26):** Locked restore, Release build, formatting/analyzers, 138 routine tests (including 52 adapter tests), and bilingual document/link checks pass on macOS ARM64 with SDK 10.0.401. The thirteen Docker-dependent tests were not rerun for this change; the model test is opt-in and ran separately. OpenAI 2.15.0 is adopted behind internal ports, with scoped authorization/credentials, optional authentication, discovery/manual entry, explicit streaming checks, cancellation, total deadlines, and no retries. Controlled HTTP tests exercise the real SDK. The opt-in test passes against LM Studio (installed app `0.4.28+2`), `lfm3-1.7b`, `http://127.0.0.1:1234/v1`, without authentication: discovery, text, streaming, and client cancellation. Unsloth is deferred at the user’s request; real authenticated-server and vision checks are not claimed. Task 6.8 and the original two-server exit criterion remain open. See [models](docs/models.md) for the verified commands, capability evidence, SDK caveat, and compatibility matrix. No chat UI, generation persistence integration, NuGet publication, or production deployment is claimed.
 
 <a id="milestone-7"></a>
 

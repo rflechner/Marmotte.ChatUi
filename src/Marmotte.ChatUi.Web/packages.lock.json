@@ -108,6 +108,14 @@
           "OpenTelemetry.Api": "1.21.0"
         }
       },
+      "System.ClientModel": {
+        "type": "Transitive",
+        "resolved": "1.16.0",
+        "contentHash": "vLljZON+8lXDUtsPP8uwsPvsBSQaUHhh8NvB+D9TQsXu5n622RLtuLyZAcyIFc98b8ixrwD0AhzUQhtg2NwJnQ==",
+        "dependencies": {
+          "System.Memory.Data": "10.0.10"
+        }
+      },
       "System.Diagnostics.DiagnosticSource": {
         "type": "Transitive",
         "resolved": "11.0.0",
@@ -121,6 +129,11 @@
           "Microsoft.IdentityModel.JsonWebTokens": "8.19.2",
           "Microsoft.IdentityModel.Tokens": "8.19.2"
         }
+      },
+      "System.Memory.Data": {
+        "type": "Transitive",
+        "resolved": "10.0.10",
+        "contentHash": "roR+5AeOpflUxJQlqSfsZs/Bvi1uw4KBuTkIgF1e8l0RdalG4AUn84+sjJLclEfOV85gAjc8+Pp540qjDE5UIg=="
       },
       "marmotte.chatui.application": {
         "type": "Project",
@@ -145,7 +158,8 @@
         "type": "Project",
         "dependencies": {
           "Marmotte.ChatUi.Application": "[1.0.0, )",
-          "Marmotte.ChatUi.Domain": "[1.0.0, )"
+          "Marmotte.ChatUi.Domain": "[1.0.0, )",
+          "OpenAI": "[2.15.0, )"
         }
       },
       "marmotte.chatui.persistence.postgresql": {
@@ -213,6 +227,15 @@
           "Microsoft.EntityFrameworkCore": "[10.0.0, 11.0.0)",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.0, 11.0.0)",
           "Npgsql": "10.0.0"
+        }
+      },
+      "OpenAI": {
+        "type": "CentralTransitive",
+        "requested": "[2.15.0, )",
+        "resolved": "2.15.0",
+        "contentHash": "04Lvp/guze35OdYsEcQY58SmSCBWCEDCGkiLiTQXDJy5L3d20n7I/zg94ry9hQ5c4dMDF1ASqlxD/IIMy47gFg==",
+        "dependencies": {
+          "System.ClientModel": "1.16.0"
         }
       },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {

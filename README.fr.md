@@ -13,13 +13,13 @@ Une application de chat en .NET et Blazor, et des composants réutilisables pour
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="La mascotte marmotte avec une pancarte Experimental Proof of Concept" width="320" />
 
-Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas d’usage autorisés, infrastructure locale Aspire, connexion/déconnexion OIDC avec Keycloak et isolation utilisateur. Web fournit un accueil public et un espace protégé. PostgreSQL persiste désormais historique, paramètres, métadonnées de pièces jointes et secrets de modèle protégés, via EF Core en code first et migrations au démarrage. Les adaptateurs de modèles et composants de chat réutilisables restent pour les milestones suivants. Aucun package NuGet n’est publié.
+Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas d’usage autorisés, infrastructure locale Aspire, connexion/déconnexion OIDC avec Keycloak et isolation utilisateur. Web fournit un accueil public et un espace protégé. PostgreSQL persiste désormais historique, paramètres, métadonnées de pièces jointes et secrets de modèle protégés, via EF Core en code first et migrations au démarrage. L’adaptateur texte M6 est implémenté et testé avec LM Studio ; les validations Unsloth et vision restent ouvertes. Les composants de chat réutilisables restent pour les milestones suivants. Aucun package NuGet n’est publié.
 
 ## Direction du produit
 
 - Composants Blazor destinés à être distribués en NuGet.
 - Chat et paramètres de connexion aux API compatibles OpenAI, dont LM Studio et Unsloth Desktop.
-- SDK .NET OpenAI envisagé dans un adaptateur indépendant.
+- SDK .NET OpenAI 2.15.0 isolé dans l’adaptateur de modèles.
 - Historique et préférences utilisateur dans PostgreSQL, avec pgvector disponible.
 - Application complète avec authentification OIDC/Keycloak et orchestration .NET Aspire.
 - Design system personnalisable, modes clair et sombre, uploads et glisser-déposer d’images.
@@ -31,6 +31,7 @@ Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas 
 - [Architecture et périmètre](ARCHITECTURE.fr.md)
 - [Modèle métier, ports et cas d’usage](docs/core.fr.md)
 - [PostgreSQL, migrations et clés de protection](docs/persistence.fr.md)
+- [Adaptateur de modèles, configuration et compatibilité](docs/models.fr.md)
 - [Consignes de contribution](AGENTS.fr.md)
 - [Mascotte et provenance des images](docs/images/README.fr.md)
 
