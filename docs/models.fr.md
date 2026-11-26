@@ -4,7 +4,7 @@
 
 ## Périmètre implémenté et choix du SDK
 
-M6 ajoute `OpenAIModelAdapter` dans Infrastructure.OpenAI et l’enregistre dans Web lorsque `ConnectionStrings:chatdb` est configuré. Il implémente `IResponseGenerator`, `IModelConnection` et `IModelCapabilities` sans exposer de type SDK. Le raccordement de l’UI de chat, de la persistance des générations et des écrans de paramètres reste pour M8. Les composants et le cœur applicatif ne dépendent pas du SDK.
+M6 ajoute `OpenAIModelAdapter` dans Infrastructure.OpenAI et l’enregistre dans Web lorsque `ConnectionStrings:chatdb` est configuré. Il implémente `IResponseGenerator`, `IModelConnection` et `IModelCapabilities` sans exposer de type SDK. M8 relie l’UI de chat, la persistance des générations et les écrans de paramètres ; voir [chat](chat.fr.md). Les composants et le cœur applicatif ne dépendent pas du SDK.
 
 [OpenAI 2.15.0](https://www.nuget.org/packages/OpenAI/2.15.0) est fixé. L’adaptateur utilise uniquement Chat Completions et Models, avec endpoints configurables. Sa politique d’authentification personnalisée ajoute un en-tête Bearer seulement lorsqu’un secret possédé existe ; aucune clé factice n’est inventée. Le constructeur d’authentification personnalisé du SDK est expérimental (`OPENAI001`) : la suppression est limitée à la création du client, protégée par des tests HTTP. Les mises à jour du SDK doivent relancer ces tests. Les retries, journaux, journaux de contenu et traces distribuées du SDK sont désactivés ; la télémétrie HTTP de l’hôte conserve les métadonnées ordinaires des requêtes, sans corps ni secrets.
 
@@ -43,7 +43,7 @@ Le streaming émet les fragments de texte dans l’ordre et exactement une mise 
 | Erreur de transport/protocole ou délai dépassé après texte progressif | Interrupted |
 | Réponse non progressive malformée ou terminaison inconnue | Unknown |
 
-Aucun corps fournisseur brut, message d’exception, secret ou texte de conversation n’est renvoyé dans les erreurs. Aucun retry automatique, même pour HTTP 429/500/503. Recharger/réconcilier l’état persisté avant une nouvelle tentative explicite de l’utilisateur. Une inférence réussie n’est pas encore écrite automatiquement dans les conversations.
+Aucun corps fournisseur brut, message d’exception, secret ou texte de conversation n’est renvoyé dans les erreurs. Aucun retry automatique, même pour HTTP 429/500/503. Recharger/réconcilier l’état persisté avant une nouvelle tentative explicite de l’utilisateur. En M8, `ChatService` enregistre dans les conversations les tours acceptés, deltas regroupés et réponses terminales.
 
 ## Vérification et compatibilité restante
 
@@ -65,6 +65,8 @@ Pour un serveur authentifié, fournir `MARMOTTE_MODEL_KEY` dans l’environnemen
 | LM Studio, version installée `0.4.28+2` ; `lfm3-1.7b` ; boucle locale hôte `/v1` ; sans authentification | Découverte, texte non progressif, streaming texte et annulation cliente contrôlés par le test SDK optionnel. Température 0 et `max_completion_tokens` acceptés. |
 | LM Studio avec authentification activée | Non testé sur le serveur réel ; seulement tests contrôlés Bearer/refus d’authentification. |
 | Capacité image/vision | Unknown ; aucune image envoyée ni prise en charge de vision revendiquée. Préparation/transport restent pour M9. |
-| Unsloth Desktop | Différé à la demande de l’utilisateur ; aucune compatibilité d’exécution revendiquée. |
+| Unsloth Desktop ; `LFM3-1.7B-GGUF:Q8_0` ; `http://127.0.0.1:8888/v1` ; authentification Bearer | M8 vérifie découverte, texte, streaming et annulation client avec la suite SDK. Deux utilisateurs exercent aussi tests texte, chat en streaming, annulation, rechargement et redémarrage d’AppHost via le navigateur, en réutilisant les secrets protégés. Aucune empreinte de version serveur n’a été relevée. |
 
-Le modèle à raisonnement épuisait la sonde initiale de 32 tokens avant toute réponse visible ; son plafond vaut désormais 256. Le scénario réel d’annulation autorise 1024 tokens afin que le raisonnement ne consomme pas tout le budget de réponse. Ces limites n’établissent pas une fenêtre de contexte vérifiée. La version installée est lue dans le bundle applicatif ; aucune empreinte du build serveur ou des poids du modèle n’a été capturée. Le réseau hôte/conteneurs est décrit dans [exploitation](operations.fr.md) ; le test modèle tourne sur l’hôte, pas dans un conteneur. La tâche M6 6.8 reste ouverte pour la matrice réelle restante.
+Le modèle à raisonnement épuisait la sonde initiale de 32 tokens avant toute réponse visible ; son plafond vaut désormais 256. Le scénario réel d’annulation autorise 1024 tokens afin que le raisonnement ne consomme pas tout le budget de réponse. Ces limites n’établissent pas une fenêtre de contexte vérifiée. La version installée est lue dans le bundle applicatif ; aucune empreinte du build serveur ou des poids du modèle n’a été capturée. Le réseau hôte/conteneurs est décrit dans [exploitation](operations.fr.md) ; le test modèle tourne sur l’hôte, pas dans un conteneur.
+
+M8 répète les appels texte/streaming/annulation de LM Studio via le navigateur authentifié pour deux utilisateurs, avec rechargement et redémarrage. La découverte Unsloth renvoie `LFM3-1.7B-GGUF`, tandis que le chat accepte l’identifiant manuel plus précis `LFM3-1.7B-GGUF:Q8_0` ; la présence dans la découverte n’est pas une condition de génération. La tâche M6 6.8 reste ouverte pour la vision et le reste de la matrice d’authentification.

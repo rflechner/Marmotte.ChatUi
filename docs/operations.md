@@ -4,7 +4,7 @@ English | [Français](operations.fr.md)
 
 ## Implemented scope
 
-M3 supplies local Aspire orchestration, PostgreSQL with pgvector, a persistent Keycloak realm/client, and Web health/telemetry defaults. M4 adds OIDC sign-in/sign-out, a protected workspace, and server session/ownership checks. M5 adds business repositories, migrations, and protected model credentials. M6 adds the text model adapter; uploads remain unimplemented. See [models](models.md) for configuration and compatibility. No production deployment is configured.
+M3 supplies local Aspire orchestration, PostgreSQL with pgvector, a persistent Keycloak realm/client, and Web health/telemetry defaults. M4 adds OIDC sign-in/sign-out, a protected workspace, and server session/ownership checks. M5 adds business repositories, migrations, and protected model credentials. M6 adds the text model adapter and M8 connects the [chat workspace](chat.md); uploads remain unimplemented. See [models](models.md) for configuration and compatibility. No production deployment is configured.
 
 ## Local startup and shutdown
 
@@ -162,5 +162,5 @@ The opt-in [infrastructure test](../tests/Marmotte.ChatUi.Infrastructure.Tests/I
 - Test interruption: a force-killed test process may leave a `marmotte-infrastructure-test-*` volume. Inspect its exact name and ensure no container uses it before removing that test volume; never prune all volumes.
 - Sign-in unavailable: verify all three `Authentication` settings, discovery reachability from Web, matching client secrets on existing realms, and the registered redirect origin. The error page omits provider diagnostics.
 - Repeated sign-in: ID-token expiry may be earlier than the session ceiling; sign in again. A Web restart also ends all sessions.
-- Repository settings appear inactive: configure `ConnectionStrings:chatdb` and verify startup migrations. Settings screens remain M8 work; model ports are registered when persistence is configured.
+- Repository settings appear inactive: configure `ConnectionStrings:chatdb` and verify startup migrations. The settings screens and model ports are available when persistence is configured. See [chat](chat.md) for connection tests, streaming evidence and interrupted-response recovery. Run only one Web process per database with the current recovery registry.
 - Credential recovery fails after restore: restore the matching Data Protection key directory and application name; without the old keys, replace the affected model credentials.

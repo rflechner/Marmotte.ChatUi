@@ -13,7 +13,7 @@ Une application de chat en .NET et Blazor, et des composants réutilisables pour
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="La mascotte marmotte avec une pancarte Experimental Proof of Concept" width="320" />
 
-Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas d’usage autorisés, infrastructure locale Aspire, connexion/déconnexion OIDC avec Keycloak et isolation utilisateur. Web fournit un accueil public et un espace protégé. PostgreSQL persiste désormais historique, paramètres, métadonnées de pièces jointes et secrets de modèle protégés, via EF Core en code first et migrations au démarrage. L’adaptateur texte M6 est implémenté et testé avec LM Studio ; les validations Unsloth et vision restent ouvertes. M7 ajoute les composants de chat réutilisables, les tokens sémantiques, les thèmes clair/sombre/système et un exemple interactif indépendant. L’intégration complète modèle/historique suit en M8. Aucun package NuGet n’est publié.
+Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas d’usage autorisés, infrastructure locale Aspire, connexion/déconnexion OIDC avec Keycloak et isolation utilisateur. Web fournit un accueil public et un espace protégé. PostgreSQL persiste désormais historique, paramètres, métadonnées de pièces jointes et secrets de modèle protégés, via EF Core en code first et migrations au démarrage. L’adaptateur texte M6 est implémenté et testé avec LM Studio et Unsloth ; la validation vision reste ouverte. M7 ajoute les composants de chat réutilisables, les tokens sémantiques, les thèmes clair/sombre/système et un exemple interactif indépendant. M8 relie paramètres, historique paginé, génération en streaming, annulation et récupération des réponses interrompues dans l’espace authentifié. Voir le [guide de chat](docs/chat.fr.md). Aucun package NuGet n’est publié.
 
 ## Direction du produit
 
@@ -33,6 +33,7 @@ Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas 
 - [PostgreSQL, migrations et clés de protection](docs/persistence.fr.md)
 - [Adaptateur de modèles, configuration et compatibilité](docs/models.fr.md)
 - [Composants réutilisables, exemple et tokens de thème](docs/integration.fr.md)
+- [Espace de chat, réglages de connexion et récupération](docs/chat.fr.md)
 - [Consignes de contribution](AGENTS.fr.md)
 - [Mascotte et provenance des images](docs/images/README.fr.md)
 
@@ -50,7 +51,7 @@ dotnet test --solution Marmotte.ChatUi.slnx --configuration Release --no-build -
 dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 ```
 
-Ouvrir [l’hôte local](http://localhost:5180). La page affiche l’état du projet et la mascotte ; elle ne propose pas encore de chat. L’arrêter avec Ctrl+C.
+Ouvrir [l’hôte local](http://localhost:5180). La page autonome affiche l’état du projet et la mascotte. Utiliser Aspire avec identité et PostgreSQL pour l’espace de chat authentifié. L’arrêter avec Ctrl+C.
 
 Essayer le studio de composants indépendant, avec streaming simulé et sans services externes :
 

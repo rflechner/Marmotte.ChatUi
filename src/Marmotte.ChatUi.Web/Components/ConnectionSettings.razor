@@ -1,0 +1,53 @@
+@using Marmotte.ChatUi.Contracts
+
+<div class="connection-settings">
+    <h2>Connection settings</h2>
+    <p>Use the full API base URL reachable from this Web server. A key is optional when the model server allows anonymous requests.</p>
+    <button class="mcui-button mcui-secondary" type="button" disabled="@Unavailable" @onclick="NewProfile">New connection</button>
+    <form @onsubmit="SaveAsync" @onsubmit:preventDefault>
+        <fieldset disabled="@Unavailable">
+            <legend>@(_id is null ? "New connection profile" : "Edit connection profile")</legend>
+            <label>Profile name <input @bind="_name" maxlength="100" required /></label>
+            <label>API base URL <input type="url" @bind="_endpoint" placeholder="Full API base URL" required /></label>
+            <label>Model <input @bind="_model" list="discovered-models" maxlength="256" required /></label>
+            <datalist id="discovered-models">
+                @foreach (var model in _models) { <option value="@model"></option> }
+            </datalist>
+            <p>Enter a model manually, or save the connection and discover its available models.</p>
+            <label>Temperature (optional, 0–2) <input type="number" @bind="_temperature" min="0" max="2" step="any" /></label>
+            <label>Maximum output tokens (optional) <input type="number" @bind="_maxTokens" min="1" /></label>
+            <label>Model-server authentication
+                <select @bind="_credentialAction">
+                    <option value="keep">Keep saved key / no key for a new profile</option>
+                    <option value="replace">Set or replace API key</option>
+                    <option value="remove">Remove saved key (anonymous server)</option>
+                </select>
+            </label>
+            @if (_credentialAction == "replace")
+            {
+                <label>New API key <input type="password" @bind="_key" autocomplete="new-password" maxlength="8192" required /></label>
+            }
+            <p>Saved keys are never displayed. Profile settings and key changes are saved separately.</p>
+            <button class="mcui-button" type="submit">Save connection</button>
+        </fieldset>
+    </form>
+    <div class="workspace-actions">
+        <button class="mcui-button mcui-secondary" disabled="@(Unavailable || _id is null)" @onclick="DiscoverAsync">Discover models</button>
+        <button class="mcui-button mcui-secondary" disabled="@(Unavailable || _id is null)" @onclick="() => CheckAsync(false)">Test text connection</button>
+        <button class="mcui-button mcui-secondary" disabled="@(Unavailable || _id is null)" @onclick="() => CheckAsync(true)">Test streaming</button>
+        <button class="mcui-button mcui-secondary" disabled="@(Unavailable || _id is null)" @onclick="() => _confirmDelete = true">Delete connection</button>
+        @if (_confirmDelete)
+        {
+            <span>Delete this connection and its saved key?</span>
+            <button class="mcui-button" disabled="@Unavailable" @onclick="DeleteAsync">Confirm connection deletion</button>
+            <button class="mcui-button mcui-secondary" @onclick="() => _confirmDelete = false">Keep connection</button>
+        }
+        @if (_busy)
+        {
+            <button class="mcui-button mcui-secondary" @onclick="CancelOperationAsync">Cancel connection operation</button>
+        }
+    </div>
+    <p>Tests use saved settings and send a small fixed prompt. Save edits before testing.</p>
+    <p role="status">@_notice</p>
+    <p class="mcui-error" role="alert">@_error</p>
+</div>

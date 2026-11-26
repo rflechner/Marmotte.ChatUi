@@ -3,6 +3,7 @@
     <EmbeddedResource Include="Fixtures/LegacySql/*.sql" />
     <Compile Include="../Marmotte.ChatUi.Core.Tests/TestAdapters.cs" Link="TestAdapters.cs" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="bunit" />
     <ProjectReference Include="../../src/Marmotte.ChatUi.Web/Marmotte.ChatUi.Web.csproj" />
   </ItemGroup>
 </Project>

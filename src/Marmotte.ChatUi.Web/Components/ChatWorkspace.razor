@@ -1,0 +1,77 @@
+@using Marmotte.ChatUi.Contracts
+
+<ChatTheme Theme="_preferences.Theme">
+    <div class="workspace">
+        @if (!_loaded)
+        {
+            <p role="status">Loading your workspace…</p>
+        }
+        <div class="mcui-error" role="alert">@_error</div>
+        <div class="workspace-grid">
+            <aside class="workspace-panel" aria-label="Conversation navigation">
+                <h2>Conversations</h2>
+                <form @onsubmit="CreateAsync" @onsubmit:preventDefault>
+                    <label>Conversation title <input @bind="_title" maxlength="200" required disabled="@Locked" /></label>
+                    <button class="mcui-button" type="submit" disabled="@Locked">New conversation</button>
+                </form>
+                <nav aria-label="Your conversations">
+                    <ul>
+                        @foreach (var item in _history)
+                        {
+                            <li @key="item.Id"><button class="mcui-button mcui-secondary" type="button" disabled="@Locked"
+                                aria-current="@(item.Id == _conversation?.Summary.Id ? "page" : null)"
+                                @onclick="() => OpenAsync(item.Id)">@item.Title</button></li>
+                        }
+                    </ul>
+                </nav>
+                <div class="workspace-actions">
+                    <button class="mcui-button mcui-secondary" disabled="@(Locked || _offset == 0)" @onclick="PreviousAsync">Previous conversations</button>
+                    <button class="mcui-button mcui-secondary" disabled="@(Locked || !_hasMore)" @onclick="NextAsync">Next conversations</button>
+                </div>
+                <p>Page @(_offset / PageSize + 1)</p>
+            </aside>
+            <div class="workspace-chat">
+                <section class="workspace-panel" aria-label="Model selection">
+                    <label>Connection profile
+                        <select value="@_preferences.SelectedProfileId" @onchange="SelectProfileAsync" disabled="@Locked">
+                            <option value="">Choose a connection</option>
+                            @foreach (var profile in _profiles)
+                            {
+                                <option value="@profile.Id">@profile.Name — @profile.Model</option>
+                            }
+                        </select>
+                    </label>
+                    @if (_moreProfiles)
+                    {
+                        <button class="mcui-button mcui-secondary" disabled="@Locked" @onclick="MoreProfilesAsync">Load more connections</button>
+                    }
+                    <label class="workspace-check"><input type="checkbox" @bind="_stream" disabled="@Locked" /> Stream response</label>
+                    <p>For streaming, run “Test streaming” below first. Verification lasts five minutes in this workspace.</p>
+                </section>
+                <ChatWidget @key="_conversation?.Summary.Id" Title="@(_conversation?.Summary.Title ?? "Your conversation")"
+                    Messages="@(_conversation?.Messages ?? [])" Draft="@_draft" DraftChanged="ChangeDraftAsync"
+                    OnSend="SendAsync" OnCancel="CancelAsync" Status="Status" Sending="_accepting" BlockedReason="@BlockedReason"
+                    Error="LastMessage?.Error" Theme="_preferences.Theme" ThemeChanged="ChangeThemeAsync">
+                    <Branding><img src="images/marmotte-chatui-mascot.png" alt="" width="48" height="48" /></Branding>
+                    <EmptyContent><h3>Start a conversation</h3><p>Create a conversation and choose a saved connection to send a message.</p></EmptyContent>
+                </ChatWidget>
+                <div class="workspace-actions">
+                    <button class="mcui-button mcui-secondary" disabled="@(_busy || _settingsBusy || _running || _conversation is null)" @onclick="ReloadAsync">Reload conversation</button>
+                    <button class="mcui-button mcui-secondary" disabled="@(Locked || _conversation is null)" @onclick="() => _confirmDelete = true">Delete conversation</button>
+                    @if (_confirmDelete)
+                    {
+                        <span>Delete this conversation and its messages?</span>
+                        <button class="mcui-button" disabled="@Locked" @onclick="DeleteAsync">Confirm deletion</button>
+                        <button class="mcui-button mcui-secondary" @onclick="() => _confirmDelete = false">Keep conversation</button>
+                    }
+                </div>
+                <details class="workspace-panel">
+                    <summary>Connection settings</summary>
+                    <ConnectionSettings Profile="SelectedProfile" Disabled="@(_busy || _running || Active || !_loaded)"
+                        OnSaved="ProfileSavedAsync" OnDeleted="ProfileDeletedAsync" OnStreamingVerified="StreamingVerifiedAsync"
+                        BusyChanged="SettingsBusyAsync" />
+                </details>
+            </div>
+        </div>
+    </div>
+</ChatTheme>

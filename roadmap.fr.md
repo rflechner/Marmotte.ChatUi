@@ -8,7 +8,7 @@ Cette feuille de route décline les décisions de [l’architecture](ARCHITECTUR
 
 ## Point de départ
 
-M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire, identité OIDC avec sessions serveur et isolation utilisateur, et persistance PostgreSQL avec secrets protégés. L’adaptateur texte M6 est implémenté et vérifié avec LM Studio. M7 livre l’UI réutilisable, les thèmes et l’exemple indépendant. Sur les 82 tâches ci-dessous, 49 sont terminées et 33 restent ouvertes. L’orchestration complète du chat et la publication NuGet restent prévues ; la matrice de compatibilité des modèles restante est suivie en 6.8.
+M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire, identité OIDC avec sessions serveur et isolation utilisateur, et persistance PostgreSQL avec secrets protégés. L’adaptateur texte M6 est implémenté et vérifié avec LM Studio et Unsloth. M7 livre l’UI réutilisable, les thèmes et l’exemple indépendant. M8 livre le flux complet de chat texte authentifié. Sur les 82 tâches ci-dessous, 56 sont terminées et 26 restent ouvertes. La publication NuGet reste prévue ; la matrice de compatibilité des modèles restante est suivie en 6.8.
 
 ## Périmètre et suivi
 
@@ -184,15 +184,17 @@ M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autoris
 
 **Dépendances:** [M4](#milestone-4), [M5](#milestone-5), [M6](#milestone-6), [M7](#milestone-7).
 
-- [ ] **8.1** — Assembler les services et adaptateurs dans l’hôte web et relier les composants réutilisables aux cas d’usage.
-- [ ] **8.2** — Créer les écrans de paramètres des profils de connexion, endpoints, authentification, sélection du modèle, test de connexion et préférences de thème.
-- [ ] **8.3** — Implémenter la navigation, la création, le chargement, la suppression des conversations et l’historique paginé propres à l’utilisateur connecté.
-- [ ] **8.4** — Relier l’envoi des messages et les mises à jour progressives à la persistance, avec un statut clair pour les générations annulées ou interrompues.
-- [ ] **8.5** — Gérer les serveurs inaccessibles, authentifications refusées, modèles indisponibles, dépassements de contexte et coupures de connexion avec des retours UI exploitables.
-- [ ] **8.6** — Utiliser la bannière et la mascotte existantes et conserver la mention POC expérimental, non prêt pour la production, dans l’application et sa documentation.
-- [ ] **8.7** — Vérifier le parcours complet avec deux utilisateurs et les deux serveurs cibles, notamment le rechargement, le redémarrage, l’annulation et la reprise après échec.
+- [x] **8.1** — Assembler les services et adaptateurs dans l’hôte web et relier les composants réutilisables aux cas d’usage.
+- [x] **8.2** — Créer les écrans de paramètres des profils de connexion, endpoints, authentification, sélection du modèle, test de connexion et préférences de thème.
+- [x] **8.3** — Implémenter la navigation, la création, le chargement, la suppression des conversations et l’historique paginé propres à l’utilisateur connecté.
+- [x] **8.4** — Relier l’envoi des messages et les mises à jour progressives à la persistance, avec un statut clair pour les générations annulées ou interrompues.
+- [x] **8.5** — Gérer les serveurs inaccessibles, authentifications refusées, modèles indisponibles, dépassements de contexte et coupures de connexion avec des retours UI exploitables.
+- [x] **8.6** — Utiliser la bannière et la mascotte existantes et conserver la mention POC expérimental, non prêt pour la production, dans l’application et sa documentation.
+- [x] **8.7** — Vérifier le parcours complet avec deux utilisateurs et les deux serveurs cibles, notamment le rechargement, le redémarrage, l’annulation et la reprise après échec.
 
 **Critère de validation:** Un utilisateur peut se connecter, configurer un modèle local, discuter avec réception progressive, arrêter une réponse et rouvrir ses conversations persistées après un redémarrage.
+
+**Validation M8 (2026-11-26) :** Sur macOS ARM64 avec SDK 10.0.401, restauration verrouillée, compilation Release (zéro avertissement/erreur), formatage/analyseurs, 176 tests .NET courants et les 12 cas PostgreSQL optionnels passent. La suite Aspire réelle réussit trois démarrages sur un volume isolé, avec Chromium pilotant deux utilisateurs Keycloak : paramètres, remplacement de secret, découverte/saisie manuelle, texte/streaming, annulation, erreurs sûres, pagination, suppressions, rechargement et redémarrage. Le même parcours navigateur passe avec LM Studio `lfm3-1.7b` (sans clé) et Unsloth `LFM3-1.7B-GGUF:Q8_0` (Bearer), pour les deux utilisateurs, avec conservation des réponses partielles et réutilisation des secrets protégés après redémarrage. La suite SDK optionnelle passe aussi avec Unsloth ; sa découverte liste le nom de base sans suffixe de quantification. Axe ne relève aucune violation sur les écrans clair/sombre/système testés ; mises en page 360px/1280px et captures ont été examinées. Onze tests navigateur de l’exemple indépendant passent. Documents bilingues et liens locaux sont contrôlés. La CI inclut le parcours navigateur contrôlé ; aucune exécution GitHub Actions, publication NuGet ou mise en production n’est annoncée. Le [guide de chat](docs/chat.fr.md) documente regroupement des sauvegardes, commits incertains, contrôle d’identité, récupération des réponses interrompues, brouillons non enregistrés et limite d’un processus Web. La vision reste pour M9 ; la matrice de compatibilité M6 restante est suivie séparément.
 
 <a id="milestone-9"></a>
 

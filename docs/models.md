@@ -4,7 +4,7 @@ English | [Français](models.fr.md)
 
 ## Implemented scope and SDK decision
 
-M6 adds `OpenAIModelAdapter` in Infrastructure.OpenAI and registers it in Web when `ConnectionStrings:chatdb` is configured. It implements `IResponseGenerator`, `IModelConnection`, and `IModelCapabilities` without exposing SDK types. Connecting the chat UI, generation persistence, and settings screens remains M8 work. Components and the application core have no SDK dependency.
+M6 adds `OpenAIModelAdapter` in Infrastructure.OpenAI and registers it in Web when `ConnectionStrings:chatdb` is configured. It implements `IResponseGenerator`, `IModelConnection`, and `IModelCapabilities` without exposing SDK types. M8 connects the chat UI, generation persistence and settings screens; see [chat](chat.md). Components and the application core have no SDK dependency.
 
 [OpenAI 2.15.0](https://www.nuget.org/packages/OpenAI/2.15.0) is pinned. The adapter uses Chat Completions and Models only, with configurable endpoints. Its custom authentication policy sends a Bearer header only when an owned credential exists; no placeholder key is invented. The SDK's custom-auth constructor is experimental (`OPENAI001`): suppression is confined to client creation, with wire tests guarding this choice. SDK upgrades must rerun these tests. SDK retries, logging, content logging, and distributed tracing are disabled; host HTTP telemetry still records ordinary request metadata without bodies or credentials.
 
@@ -43,7 +43,7 @@ Streaming yields ordered text deltas and exactly one terminal update. Natural st
 | Transport/protocol failure or timeout after streamed text | Interrupted |
 | Malformed non-streaming payload or unrecognized completion | Unknown |
 
-No raw provider body, exception message, credential, or conversation text is returned in errors. There is no automatic retry, even for HTTP 429/500/503. Reload/reconcile persisted generation state before any explicit user retry. Successful inference is not yet automatically written to conversations.
+No raw provider body, exception message, credential, or conversation text is returned in errors. There is no automatic retry, even for HTTP 429/500/503. Reload/reconcile persisted generation state before any explicit user retry. M8 `ChatService` records accepted turns, batched deltas and terminal responses in conversations.
 
 ## Verification and remaining compatibility work
 
@@ -65,6 +65,6 @@ For an authenticated server, supply `MARMOTTE_MODEL_KEY` through the process's s
 | LM Studio, installed application version `0.4.28+2`; `lfm3-1.7b`; host-loopback `/v1`; no authentication | Discovery, non-streaming text, streaming text, and client cancellation checked by the opt-in SDK test. Temperature 0 and `max_completion_tokens` accepted. |
 | LM Studio with authentication enabled | Not tested on the real server; controlled Bearer/authentication-rejection tests only. |
 | Image/vision capability | Unknown; no image was sent and no vision support is claimed. Preparation/transport remains M9. |
-| Unsloth Desktop | Deferred at the user's request; no runtime compatibility claim. |
+| Unsloth Desktop; `LFM3-1.7B-GGUF:Q8_0`; `http://127.0.0.1:8888/v1`; Bearer authentication | M8 verifies discovery, text, streaming and client cancellation with the SDK suite. Two users also exercise text probes, streaming chat, cancellation, reload and AppHost restart through the browser, reusing protected credentials. No server build fingerprint was captured. |
 
-The reasoning model exhausted an initial 32-token probe before emitting visible text; the probe cap is now 256. The live cancellation case allows 1024 tokens so reasoning does not consume the entire answer budget. These limits do not imply a verified context window. The installed app version is read from its bundle; no server build fingerprint or model weight digest was captured. Host/container routing is described in [operations](operations.md); the model test runs on the host, not inside a container. M6 task 6.8 remains open for the outstanding real-server matrix.
+The reasoning model exhausted an initial 32-token probe before emitting visible text; the probe cap is now 256. The live cancellation case allows 1024 tokens so reasoning does not consume the entire answer budget. These limits do not imply a verified context window. The installed app version is read from its bundle; no server build fingerprint or model weight digest was captured. Host/container routing is described in [operations](operations.md); the model test runs on the host, not inside a container. M8 repeats LM Studio text/streaming/cancellation through the authenticated browser for two users, including reload and restart. Unsloth discovery returns `LFM3-1.7B-GGUF` while chat accepts the more specific manual identifier `LFM3-1.7B-GGUF:Q8_0`; discovery membership is not a prerequisite for generation. M6 task 6.8 remains open for vision and the remaining authentication matrix.

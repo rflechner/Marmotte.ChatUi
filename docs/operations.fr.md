@@ -4,7 +4,7 @@
 
 ## Périmètre implémenté
 
-M3 fournit l’orchestration locale Aspire, PostgreSQL avec pgvector, un realm/client Keycloak persistant et les paramètres de santé/télémétrie de Web. M4 ajoute connexion/déconnexion OIDC, espace de travail protégé et contrôles serveur de session/propriété. M5 ajoute repositories métier, migrations et secrets de modèle protégés. M6 ajoute l’adaptateur texte ; les uploads restent non implémentés. Voir [modèles](models.fr.md) pour la configuration et la compatibilité. Aucun déploiement de production n’est configuré.
+M3 fournit l’orchestration locale Aspire, PostgreSQL avec pgvector, un realm/client Keycloak persistant et les paramètres de santé/télémétrie de Web. M4 ajoute connexion/déconnexion OIDC, espace de travail protégé et contrôles serveur de session/propriété. M5 ajoute repositories métier, migrations et secrets de modèle protégés. M6 ajoute l’adaptateur texte et M8 relie l’[espace de chat](chat.fr.md) ; les uploads restent non implémentés. Voir [modèles](models.fr.md) pour la configuration et la compatibilité. Aucun déploiement de production n’est configuré.
 
 ## Démarrage et arrêt locaux
 
@@ -162,5 +162,5 @@ Le [test d’infrastructure](../tests/Marmotte.ChatUi.Infrastructure.Tests/Infra
 - Interruption des tests : un processus tué brutalement peut laisser un volume `marmotte-infrastructure-test-*`. Inspecter son nom exact et vérifier qu’aucun conteneur ne l’utilise avant de supprimer ce volume de test ; ne jamais purger tous les volumes.
 - Connexion indisponible : vérifier les trois paramètres `Authentication`, la découverte joignable depuis Web, les secrets du client sur un realm existant et l’origine de redirection enregistrée. La page d’erreur omet les diagnostics du fournisseur.
 - Connexions répétées : l’ID token peut expirer avant le plafond de session ; se reconnecter. Un redémarrage Web termine aussi toutes les sessions.
-- Paramètres de repository inactifs : configurer `ConnectionStrings:chatdb` et vérifier les migrations au démarrage. Les écrans de paramètres restent pour M8 ; les ports de modèles sont enregistrés lorsque la persistance est configurée.
+- Paramètres de repository inactifs : configurer `ConnectionStrings:chatdb` et vérifier les migrations au démarrage. Les écrans de paramètres et ports de modèles sont disponibles lorsque la persistance est configurée. Voir [chat](chat.fr.md) pour tests de connexion, preuve de streaming et récupération des réponses interrompues. N’exécuter qu’un processus Web par base avec le registre de récupération actuel.
 - Récupération de secrets impossible après restauration : restaurer le répertoire de clés Data Protection et le nom d’application correspondants ; sans les anciennes clés, remplacer les secrets de modèle concernés.

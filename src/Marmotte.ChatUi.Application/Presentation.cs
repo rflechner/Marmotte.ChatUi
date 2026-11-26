@@ -21,7 +21,7 @@ internal static class Presentation
             (GenerationStatus)message.State, message.CreatedAt, message.UpdatedAt,
             Array.AsReadOnly(message.Attachments.Select(attachment => new AttachmentView(attachment.Id, attachment.FileName,
                 attachment.MediaType, attachment.SizeBytes, (AttachmentStatus)attachment.State, attachment.Width, attachment.Height)).ToArray()),
-            message.Failure.HasValue ? ChatErrorCode.GenerationFailed : null);
+            message.Failure.HasValue ? ModelConnectionService.ErrorCode(message.Failure.Value) : null);
     }
 
     /// <summary>Projects ordinary connection settings and timestamps without the profile's owner identity.</summary>

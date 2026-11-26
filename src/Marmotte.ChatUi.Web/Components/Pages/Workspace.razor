@@ -1,28 +1,25 @@
 @page "/workspace"
 @attribute [Authorize]
+@inject IServiceProvider Services
 
 <PageTitle>Your workspace — Marmotte.ChatUi</PageTitle>
 
-<main class="foundation">
+<main class="workspace-page">
     <h1>Your workspace</h1>
     <AuthorizeView>
         <p>Signed in as <strong>@context.User.Identity?.Name</strong>.</p>
     </AuthorizeView>
     <p><strong>Experimental POC — not production-ready.</strong></p>
-    <p>Your session is active. The reusable chat surface is ready; model and history integration follows in milestone 8.</p>
-    <ChatWidget Title="Your conversation" @bind-Theme="_theme">
-        <Branding><img src="images/marmotte-chatui-mascot.png" alt="" width="48" height="48" /></Branding>
-        <EmptyContent>
-            <h3>A space for your next conversation</h3>
-            <p>Sending will become available when the chat workflow is connected in milestone 8.</p>
-        </EmptyContent>
-    </ChatWidget>
+    @if (Services.GetService<Marmotte.ChatUi.Application.ChatService>() is not null)
+    {
+        <ChatWorkspace />
+    }
+    else
+    {
+        <p>Chat storage is not configured. Start the application through Aspire to connect PostgreSQL.</p>
+    }
     <form action="/account/logout" method="post" data-enhance="false">
         <AntiforgeryToken />
         <button type="submit">Sign out</button>
     </form>
 </main>
-
-@code {
-    private Marmotte.ChatUi.Contracts.ThemePreference _theme;
-}

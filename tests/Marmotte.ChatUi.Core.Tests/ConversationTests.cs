@@ -84,7 +84,7 @@ public sealed class ConversationTests
                 new ResponseDelta(string.Empty, terminal, terminal == MessageState.Failed ? GenerationFailure.Interrupted : null), TestContext.Current.CancellationToken);
         Assert.Equal("Partial", ended.Messages[1].Content);
         Assert.Equal(expected, ended.Messages[1].Status);
-        Assert.Equal(terminal == MessageState.Failed ? ChatErrorCode.GenerationFailed : (ChatErrorCode?)null, ended.Messages[1].Error);
+        Assert.Equal(terminal == MessageState.Failed ? ChatErrorCode.ResponseInterrupted : (ChatErrorCode?)null, ended.Messages[1].Error);
         await AssertError(ChatErrorCode.Conflict, () => Service.RecordResponseAsync(created.Summary.Id, responseId,
             new ResponseDelta("Late", MessageState.Streaming), TestContext.Current.CancellationToken));
         var retry = await Service.RecordMessageAsync(created.Summary.Id, request, TestContext.Current.CancellationToken);

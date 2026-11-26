@@ -4,7 +4,7 @@
 
 ## Interface disponible
 
-M7 implémente une Razor Class Library `net10.0` ne référençant que `Marmotte.ChatUi.Contracts` et le package `Microsoft.AspNetCore.Components.Web`, compatible navigateur. Les composants reçoivent des instantanés, paramètres, callbacks et templates ; ils n’injectent aucun service applicatif et n’accèdent ni à la configuration, ni à l’identité, au stockage ou aux clients de modèles. L’hôte Web complet utilise le même widget dans son espace protégé, avec envoi désactivé jusqu’au branchement du flux de chat en M8.
+M7 implémente une Razor Class Library `net10.0` ne référençant que `Marmotte.ChatUi.Contracts` et le package `Microsoft.AspNetCore.Components.Web`, compatible navigateur. Les composants reçoivent des instantanés, paramètres, callbacks et templates ; ils n’injectent aucun service applicatif et n’accèdent ni à la configuration, ni à l’identité, au stockage ou aux clients de modèles. L’hôte Web complet utilise le même widget dans son espace protégé, relié au [flux de chat](chat.fr.md) M8.
 
 [L’exemple indépendant](../samples/Marmotte.ChatUi.Sample/Marmotte.ChatUi.Sample.csproj) ne référence que Components. Il substitue un service de réponse déterministe, démontre les thèmes hérités et par instance, et utilise la mascotte originale via une copie de déploiement inchangée. Il ne nécessite ni Keycloak, PostgreSQL, Aspire, SDK OpenAI, identifiants ou appel réseau à un modèle. L’état dure le temps du circuit de la page ; un rechargement le perd. Démarrer après restauration et compilation de la solution :
 
@@ -46,7 +46,7 @@ Tous les types appartiennent à `Marmotte.ChatUi.Components`. Placer les composa
 | Composant | Entrées et comportement |
 | --- | --- |
 | `ChatTheme` | `Theme` vaut `System` par défaut ; `Class`, `Style`, `ChildContent` définissent le périmètre de thème de l’hôte. |
-| `ChatWidget` | `Title`, `Messages`, `Draft`/`DraftChanged`, `Theme`/`ThemeChanged` ; `Status`, `Sending`, `Cancelling`, `Error` ; `Attachments` ; `OnSend`, `OnCancel`, `OnRemoveAttachment`. `ShowThemeSelector` vaut true par défaut. `Class`/`Style` personnalisent la racine. |
+| `ChatWidget` | `Title`, `Messages`, `Draft`/`DraftChanged`, `Theme`/`ThemeChanged` ; `Status`, `Sending`, `Cancelling`, `Error`, `BlockedReason` ; `Attachments` ; `OnSend`, `OnCancel`, `OnRemoveAttachment`. `ShowThemeSelector` vaut true par défaut. `Class`/`Style` personnalisent la racine. |
 | `MessageList` | `Messages`, nom accessible `Label`, `EmptyContent`, `MessageTemplate`, `AttachmentTemplate`. Région défilable avec focus et liste ordonnée ; aucun défilement automatique ni annonce de chaque token. |
 | `ChatMessage` | `Message` requis, `ContentTemplate` et `AttachmentTemplate` optionnels. Texte brut encodé, locuteur, heure UTC, métadonnées de préparation et état des réponses partielles. |
 | `MessageComposer` | `Draft`/`DraftChanged`, `OnSend`, `Busy`, `BlockedReason`. Texte multiligne avec envoi explicite, garde locale contre les doublons et retour d’erreur sûr. |
@@ -54,6 +54,8 @@ Tous les types appartiennent à `Marmotte.ChatUi.Components`. Placer les composa
 | `AttachmentPreview` | `Attachment` requis, `PreviewTemplate`, `OnRemove`, `Disabled`. Métadonnées et annonces polies de préparation ; ni URL, récupération, upload ou support de modèle supposé. Omettre la suppression dans l’historique. |
 
 `ChatWidget` propose `Branding`, `EmptyContent`, `Footer`, `RenderFragment<MessageView> MessageTemplate` et `RenderFragment<AttachmentView> AttachmentTemplate`. Les templates de message remplacent uniquement le contenu, préservant locuteur et état. Le widget n’impose ni mascotte ni marque par défaut ; Web et l’exemple fournissent eux-mêmes la mascotte préservée. Templates, `Class` et `Style` sont des entrées de confiance de l’hôte. Celui-ci doit assainir tout rendu HTML/Markdown personnalisé et autoriser la récupération des pièces jointes ; il gère aussi les URL d’objets et leur nettoyage. Le rendu par défaut n’interprète jamais le texte du modèle ou les noms de fichiers comme HTML, Markdown, CSS ou liens.
+
+`BlockedReason` explique facultativement une configuration ou sélection hôte manquante et bloque l’envoi, sans annoncer un envoi en cours.
 
 ## Contrat des callbacks et des états
 
@@ -104,4 +106,4 @@ Surcharger ensemble les couleurs liées et revérifier le contraste dans chaque 
 
 Les tests bUnit couvrent encodage, contenu partiel, callbacks, doublons, annulation, conservation du brouillon, blocage des pièces jointes, libellés, templates, thèmes indépendants et actions SSR désactivées. Les tests d’architecture imposent l’indépendance de l’exemple. La suite navigateur exécute le véritable exemple Interactive Server : clavier/focus, envoi/streaming/annulation/échec, changements de thème/système, tokens hérités et par instance, formats 360px/1280px et contrôles d’accessibilité axe. Consulter [le développement](development.fr.md) pour les commandes et limites. Les contrôles automatisés ne constituent pas un audit d’usage avec lecteur d’écran.
 
-SSR statique et Interactive Server sont vérifiés. WebAssembly et Auto gardent des dépendances compatibles navigateur, sans hôte ou validation de consommation dédiés. L’orchestration complète authentifiée modèle/historique relève de M8, les uploads de M9 et NuGet de M10. Aucune publication de package, mise en production ou compatibilité entre navigateurs n’est annoncée.
+SSR statique et Interactive Server sont vérifiés. WebAssembly et Auto gardent des dépendances compatibles navigateur, sans hôte ou validation de consommation dédiés. M8 implémente l’orchestration complète authentifiée modèle/historique ; les uploads restent pour M9 et NuGet pour M10. Aucune publication de package, mise en production ou compatibilité entre navigateurs n’est annoncée.

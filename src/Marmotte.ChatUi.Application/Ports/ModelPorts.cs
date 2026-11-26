@@ -37,7 +37,7 @@ public sealed record ResponseDelta(string Text, MessageState State, GenerationFa
 /// Cancellation throws OperationCanceledException, including during enumeration; consumers explicitly persist cancellation.
 /// Adapters impose a documented finite timeout, map provider errors to safe failures, and never emit raw exception text.
 /// Early iterator disposal must release transport resources. Streaming is opt-in and requires verified support;
-/// non-streaming requests yield a single terminal update. Generation orchestration remains a host responsibility.
+/// non-streaming requests yield a single terminal update. The host composes ChatService for generation orchestration.
 /// </remarks>
 public interface IResponseGenerator
 {

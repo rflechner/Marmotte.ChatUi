@@ -39,6 +39,9 @@ public partial class ChatWidget
     /// <summary>Gets or sets whether host acceptance is in progress.</summary>
     [Parameter] public bool Sending { get; set; }
 
+    /// <summary>Gets or sets a host explanation that prevents submission while configuration or selection is incomplete.</summary>
+    [Parameter] public string? BlockedReason { get; set; }
+
     /// <summary>Gets or sets whether cancellation is awaiting acknowledgement.</summary>
     [Parameter] public bool Cancelling { get; set; }
 

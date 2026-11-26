@@ -23,7 +23,7 @@ public sealed partial class InfrastructureTests
     public async Task AppHost_initializes_and_restarts_without_losing_application_or_identity_data()
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        timeout.CancelAfter(TimeSpan.FromMinutes(5));
+        timeout.CancelAfter(TimeSpan.FromMinutes(BrowserEnabled ? 10 : 5));
         var cancellationToken = timeout.Token;
         var volumeName = $"marmotte-infrastructure-test-{Guid.NewGuid():N}";
         var keyDirectory = Path.Combine(Path.GetTempPath(), $"marmotte-infrastructure-keys-{Guid.NewGuid():N}");
@@ -122,6 +122,11 @@ public sealed partial class InfrastructureTests
                     await ExecuteScalarAsync(chat, "DROP EXTENSION vector", cancellationToken);
                 }
 
+                if (BrowserEnabled && start < 2)
+                {
+                    await VerifyWorkspaceBrowserAsync(webPort, password, start == 0 ? "initial" : "restart", cancellationToken);
+                }
+
                 await chat.CloseAsync();
                 await identity.CloseAsync();
                 NpgsqlConnection.ClearAllPools();
@@ -134,6 +139,53 @@ public sealed partial class InfrastructureTests
             if (Directory.Exists(keyDirectory))
             {
                 Directory.Delete(keyDirectory, recursive: true);
+            }
+        }
+    }
+
+    private static bool BrowserEnabled => Environment.GetEnvironmentVariable("MARMOTTE_RUN_BROWSER_TESTS") == "1";
+
+    /// <summary>Runs real browser circuits against isolated Aspire resources, passing temporary credentials only in the environment.</summary>
+    private static async Task VerifyWorkspaceBrowserAsync(int port, string password, string phase, CancellationToken cancellationToken)
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Marmotte.ChatUi.slnx")))
+        {
+            root = root.Parent;
+        }
+        Assert.NotNull(root);
+        var start = new ProcessStartInfo("node")
+        {
+            WorkingDirectory = root.FullName,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        start.ArgumentList.Add("tests/browser/workspace.mjs");
+        start.Environment["MARMOTTE_TEST_WEB_URL"] = $"http://localhost:{port.ToString(CultureInfo.InvariantCulture)}";
+        start.Environment["MARMOTTE_TEST_PASSWORD"] = password;
+        start.Environment["MARMOTTE_TEST_PHASE"] = phase;
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("Cannot start browser checks.");
+        var output = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var error = process.StandardError.ReadToEndAsync(cancellationToken);
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+            var diagnostics = $"{await output}\n{await error}";
+            foreach (var secret in new[] { password, Environment.GetEnvironmentVariable("MARMOTTE_MODEL_KEY"), Environment.GetEnvironmentVariable("MARMOTTE_UNSLOTH_KEY") })
+            {
+                if (!string.IsNullOrEmpty(secret))
+                {
+                    diagnostics = diagnostics.Replace(secret, "[redacted]", StringComparison.Ordinal);
+                }
+            }
+
+            Assert.True(process.ExitCode == 0, $"Browser checks failed: {diagnostics}");
+        }
+        finally
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
             }
         }
     }

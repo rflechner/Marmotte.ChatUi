@@ -4,7 +4,7 @@ English | [Français](integration.fr.md)
 
 ## Available surface
 
-M7 implements a `net10.0` Razor Class Library with only `Marmotte.ChatUi.Contracts` and the browser-compatible `Microsoft.AspNetCore.Components.Web` package. Components accept snapshots, parameters, callbacks and templates; they inject no application services and access no configuration, identity, storage, or model clients. The full Web host uses the same widget in its protected workspace, with sending disabled until M8 connects the chat workflow.
+M7 implements a `net10.0` Razor Class Library with only `Marmotte.ChatUi.Contracts` and the browser-compatible `Microsoft.AspNetCore.Components.Web` package. Components accept snapshots, parameters, callbacks and templates; they inject no application services and access no configuration, identity, storage, or model clients. The full Web host uses the same widget in its protected workspace, connected to the M8 [chat workflow](chat.md).
 
 The independent [sample](../samples/Marmotte.ChatUi.Sample/Marmotte.ChatUi.Sample.csproj) references only Components. It substitutes a deterministic response service, demonstrates both inherited and instance themes, and uses the original mascot through an unchanged deployment copy. It needs no Keycloak, PostgreSQL, Aspire, OpenAI SDK, credentials, or network calls to a model. State lasts for the page's circuit; reloading loses it. Start after the solution restore/build:
 
@@ -46,7 +46,7 @@ All types are in `Marmotte.ChatUi.Components`. Put standalone components inside 
 | Component | Inputs and behavior |
 | --- | --- |
 | `ChatTheme` | `Theme` defaults to `System`; `Class`, `Style`, `ChildContent` define the host's theme boundary. |
-| `ChatWidget` | `Title`, `Messages`, `Draft`/`DraftChanged`, `Theme`/`ThemeChanged`; `Status`, `Sending`, `Cancelling`, `Error`; `Attachments`; `OnSend`, `OnCancel`, `OnRemoveAttachment`. `ShowThemeSelector` defaults to true. `Class`/`Style` customize the root. |
+| `ChatWidget` | `Title`, `Messages`, `Draft`/`DraftChanged`, `Theme`/`ThemeChanged`; `Status`, `Sending`, `Cancelling`, `Error`, `BlockedReason`; `Attachments`; `OnSend`, `OnCancel`, `OnRemoveAttachment`. `ShowThemeSelector` defaults to true. `Class`/`Style` customize the root. |
 | `MessageList` | `Messages`, accessible `Label`, `EmptyContent`, `MessageTemplate`, `AttachmentTemplate`. A focusable scroll region with an ordered list; no auto-scroll or live token announcements. |
 | `ChatMessage` | Required `Message`, optional `ContentTemplate` and `AttachmentTemplate`. Encoded plain text, speaker, UTC time, preparation metadata, and partial-response state. |
 | `MessageComposer` | `Draft`/`DraftChanged`, `OnSend`, `Busy`, `BlockedReason`. Multiline text with explicit send, local duplicate guard and safe failure feedback. |
@@ -61,6 +61,7 @@ All types are in `Marmotte.ChatUi.Components`. Put standalone components inside 
 - The host assigns submission IDs, handles authorization and idempotency, sets `Sending` during acceptance, and supplies the latest `Status`. `Pending`/`Streaming`, `Sending`, and `Cancelling` block new submissions. Host callbacks own deadlines and `CancellationTokenSource` lifetimes; components neither start nor dispose application operations.
 - `OnCancel()` is awaited once at a time and shows “Stopping response…”. The host must actually cancel work and publish `Cancelled` after acknowledgement. Failed cancellation exposes a safe error without declaring success. Partial text remains in the message snapshots. Stopping a stream alone is not durable cancellation; use the appropriate application operation in an integrated host.
 - `ThemeChanged(ThemePreference)` requests a choice; the host updates `Theme` and decides whether to persist it with preferences. No local storage or global browser state is modified. `OnRemoveAttachment(Guid)` asks the host to remove pending metadata. The host then replaces `Attachments`.
+- `BlockedReason` optionally explains missing host configuration or selection and blocks submission. It does not imply a sending state.
 - Pending attachments always block this **text-only** composer, including `Ready` attachments. Readiness means preparation completed, not provider support or delivery. Removal is available before sending; actual uploads/vision arrive in M9.
 - After sending succeeds or fails, focus returns to the composer. Enter inserts a newline; Tab reaches Send message, and Enter/Space activates the button. There is no global keyboard handler, auto-focus, or automatic scrolling during streaming.
 
@@ -104,4 +105,4 @@ Override related colors together and recheck contrast in every supported theme. 
 
 bUnit tests cover encoding, partial content, callbacks, duplicate sends, cancellation, draft retention, attachment blocking, labels, templates, independent themes, and disabled SSR actions. Architecture tests enforce the sample's independence. The browser suite runs the actual Interactive Server sample: keyboard/focus, sending/streaming/cancellation/failure, theme/OS changes, inherited and instance tokens, 360px/1280px layouts, and axe accessibility checks. See [development](development.md) for commands and validation limits. Automated checks are not a screen-reader usability audit.
 
-Static SSR and Interactive Server are verified. WebAssembly and Auto retain browser-compatible dependencies but have no dedicated host/consumption validation. Full authenticated model/history orchestration is M8, uploads M9, and NuGet distribution M10. No package publication, production deployment, or cross-browser compatibility claim is made.
+Static SSR and Interactive Server are verified. WebAssembly and Auto retain browser-compatible dependencies but have no dedicated host/consumption validation. M8 implements authenticated model/history orchestration; uploads remain M9 and NuGet distribution M10. No package publication, production deployment, or cross-browser compatibility claim is made.

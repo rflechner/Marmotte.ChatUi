@@ -1,3 +1,4 @@
+using Marmotte.ChatUi.Application;
 using Marmotte.ChatUi.Application.Ports;
 using Marmotte.ChatUi.Infrastructure.OpenAI;
 
@@ -34,5 +35,8 @@ internal static class ModelHostingExtensions
         builder.Services.AddScoped<IResponseGenerator>(services => services.GetRequiredService<OpenAIModelAdapter>());
         builder.Services.AddScoped<IModelConnection>(services => services.GetRequiredService<OpenAIModelAdapter>());
         builder.Services.AddScoped<IModelCapabilities>(services => services.GetRequiredService<OpenAIModelAdapter>());
+        builder.Services.AddSingleton<GenerationRegistry>();
+        builder.Services.AddScoped<ChatService>();
+        builder.Services.AddScoped<ModelConnectionService>();
     }
 }

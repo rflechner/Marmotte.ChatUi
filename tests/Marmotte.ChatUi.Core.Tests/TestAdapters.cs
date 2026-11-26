@@ -20,6 +20,8 @@ internal sealed class TestClock : TimeProvider
 {
     public DateTimeOffset Now { get; set; } = new(2026, 11, 25, 12, 0, 0, TimeSpan.Zero);
     public override DateTimeOffset GetUtcNow() => Now;
+    public override long GetTimestamp() => Now.UtcTicks;
+    public override long TimestampFrequency => TimeSpan.TicksPerSecond;
 }
 
 /// <summary>Stores immutable snapshots in memory to exercise repository ownership, paging, and revision contracts.</summary>

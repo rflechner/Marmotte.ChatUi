@@ -64,9 +64,12 @@ public sealed class PostgreSqlTests(PostgreSqlFixture fixture) : IClassFixture<P
         var repeated = await history.RecordMessageAsync(conversationId, submission, Token);
         Assert.Equal(loaded.Summary.Revision, repeated.Summary.Revision);
         Assert.Equal(2, repeated.Messages.Count);
-        var cancelled = await history.CancelResponseAsync(conversationId, responseId, Token);
-        Assert.Equal("Partial response", cancelled.Messages[1].Content);
-        Assert.Equal(GenerationStatus.Cancelled, cancelled.Messages[1].Status);
+        var recovered = await restartedScope.ServiceProvider.GetRequiredService<ChatService>().LoadAsync(conversationId, Token);
+        Assert.Equal("Partial response", recovered.Messages[1].Content);
+        Assert.Equal(GenerationStatus.Failed, recovered.Messages[1].Status);
+        Assert.Equal(ChatErrorCode.ResponseInterrupted, recovered.Messages[1].Error);
+        Assert.Equal(recovered.Summary.Revision,
+            (await restartedScope.ServiceProvider.GetRequiredService<ChatService>().LoadAsync(conversationId, Token)).Summary.Revision);
         var profiles = restartedScope.ServiceProvider.GetRequiredService<IConnectionProfileService>();
         var preferences = restartedScope.ServiceProvider.GetRequiredService<IUserPreferencesService>();
         var credentials = restartedScope.ServiceProvider.GetRequiredService<ModelCredentialService>();

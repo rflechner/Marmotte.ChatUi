@@ -32,7 +32,7 @@
             </div>
         }
         <MessageComposer Draft="@Draft" DraftChanged="DraftChanged" OnSend="OnSend" Busy="Busy"
-                         BlockedReason="@(Attachments.Count > 0 ? "This text composer cannot send attachments. Remove them before sending." : null)" />
+                         BlockedReason="@(Attachments.Count > 0 ? "This text composer cannot send attachments. Remove them before sending." : BlockedReason)" />
         @Footer
     </section>
 </ChatTheme>

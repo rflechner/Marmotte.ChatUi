@@ -59,11 +59,22 @@ jobs:
         run: dotnet restore Marmotte.ChatUi.slnx --locked-mode
       - name: Build
         run: dotnet build Marmotte.ChatUi.slnx --configuration Release --no-restore
-      - name: Verify Docker infrastructure and restarts
-        env:
-          MARMOTTE_RUN_INFRASTRUCTURE_TESTS: '1'
-        run: dotnet test --project tests/Marmotte.ChatUi.Infrastructure.Tests --configuration Release --no-build --no-restore
       - name: Verify PostgreSQL repositories and authenticated persistence
         env:
           MARMOTTE_RUN_INFRASTRUCTURE_TESTS: '1'
         run: dotnet test --project tests/Marmotte.ChatUi.Web.Tests --configuration Release --no-build --no-restore
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/browser/package-lock.json
+      - name: Restore authenticated browser checks
+        run: npm ci --prefix tests/browser
+      - name: Install Chromium
+        working-directory: tests/browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify authenticated chat and restart with a controlled model server
+        env:
+          MARMOTTE_RUN_INFRASTRUCTURE_TESTS: '1'
+          MARMOTTE_RUN_BROWSER_TESTS: '1'
+        run: dotnet test --project tests/Marmotte.ChatUi.Infrastructure.Tests --configuration Release --no-build --no-restore

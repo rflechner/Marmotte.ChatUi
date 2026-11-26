@@ -8,7 +8,7 @@ This roadmap turns the [architecture decisions](ARCHITECTURE.md) into actionable
 
 ## Starting point
 
-M1 through M5 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, OIDC identity with server-side session and user isolation, and PostgreSQL persistence with protected credentials. The M6 text adapter is implemented and verified with LM Studio. M7 delivers the reusable UI, themes and independent sample. Of the 82 tasks below, 49 are complete and 33 remain open. Full chat orchestration and NuGet publication remain planned; the remaining model compatibility matrix is tracked in 6.8.
+M1 through M5 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, OIDC identity with server-side session and user isolation, and PostgreSQL persistence with protected credentials. The M6 text adapter is implemented and verified with LM Studio and Unsloth. M7 delivers the reusable UI, themes and independent sample. M8 delivers the complete authenticated text-chat workflow. Of the 82 tasks below, 56 are complete and 26 remain open. NuGet publication remains planned; the remaining model compatibility matrix is tracked in 6.8.
 
 ## Scope and tracking
 
@@ -184,15 +184,17 @@ M1 through M5 are complete: solution foundations, the domain and authorized use 
 
 **Dependencies:** [M4](#milestone-4), [M5](#milestone-5), [M6](#milestone-6), [M7](#milestone-7).
 
-- [ ] **8.1** — Compose services and adapters in the web host and wire the reusable components to application use cases.
-- [ ] **8.2** — Build settings screens for connection profiles, endpoints, authentication, model selection, connection testing, and theme preferences.
-- [ ] **8.3** — Implement conversation navigation, creation, loading, deletion, and paginated history scoped to the signed-in user.
-- [ ] **8.4** — Connect message submission and streamed updates to persistence, including clear status for cancelled or interrupted generations.
-- [ ] **8.5** — Handle unreachable servers, rejected authentication, unavailable models, context-limit errors, and dropped connections with actionable UI feedback.
-- [ ] **8.6** — Use the existing banner/mascot and retain the experimental POC, not-production-ready notice in the application and documentation.
-- [ ] **8.7** — Verify the full flow with two users and both target servers, including reload, restart, cancellation, and recovery from failures.
+- [x] **8.1** — Compose services and adapters in the web host and wire the reusable components to application use cases.
+- [x] **8.2** — Build settings screens for connection profiles, endpoints, authentication, model selection, connection testing, and theme preferences.
+- [x] **8.3** — Implement conversation navigation, creation, loading, deletion, and paginated history scoped to the signed-in user.
+- [x] **8.4** — Connect message submission and streamed updates to persistence, including clear status for cancelled or interrupted generations.
+- [x] **8.5** — Handle unreachable servers, rejected authentication, unavailable models, context-limit errors, and dropped connections with actionable UI feedback.
+- [x] **8.6** — Use the existing banner/mascot and retain the experimental POC, not-production-ready notice in the application and documentation.
+- [x] **8.7** — Verify the full flow with two users and both target servers, including reload, restart, cancellation, and recovery from failures.
 
 **Exit criterion:** A user can sign in, configure a local model, chat with streaming, stop a response, and reopen persisted conversations after a restart.
+
+**M8 validation (2026-11-26):** On macOS ARM64 with SDK 10.0.401, locked restore, Release build (zero warnings/errors), formatting/analyzers, 176 routine .NET tests, and all 12 opt-in PostgreSQL cases pass. The real Aspire suite passes three starts on an isolated volume, with Chromium driving two Keycloak users through settings, credential replacement, discovery/manual entry, text/streaming, cancellation, safe failures, paging, deletion, reload and restart. The same browser flow passes with LM Studio `lfm3-1.7b` (keyless) and Unsloth `LFM3-1.7B-GGUF:Q8_0` (Bearer), for both users, including retained partial responses and protected credentials reused after restart. The opt-in SDK suite also passes against Unsloth; its discovery lists the base model name without the quantization suffix. Axe reports no violations in the tested light/dark/system workspace screens; 360px/1280px layouts and screenshots were reviewed. Eleven independent sample browser tests pass. Bilingual documents and local links are checked. CI includes the controlled browser flow; no GitHub Actions run, NuGet publication or deployment is claimed. The [chat guide](docs/chat.md) documents checkpoint batching, uncertain commits, current-user checks, interrupted-response recovery, unsaved drafts and the single-Web-process limit. Vision remains M9; the outstanding M6 compatibility matrix remains tracked separately.
 
 <a id="milestone-9"></a>
 

@@ -5,7 +5,7 @@ using Marmotte.ChatUi.Domain;
 namespace Marmotte.ChatUi.Application;
 
 /// <summary>Authorized conversation use cases; compose with request/user-scoped identity and repositories in the host.</summary>
-/// <remarks>Does not call a model. The host orchestrator will use RecordResponseAsync with provider deltas in M8.</remarks>
+/// <remarks>Does not call a model. ChatService orchestrates model generation and checkpointing.</remarks>
 public sealed class ConversationService(ICurrentUser currentUser, IConversationRepository repository, TimeProvider timeProvider)
     : IConversationService
 {
