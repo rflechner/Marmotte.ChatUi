@@ -22,6 +22,8 @@
     <File Path="docs\integration.md" />
     <File Path="docs\operations.fr.md" />
     <File Path="docs\operations.md" />
+    <File Path="docs\persistence.fr.md" />
+    <File Path="docs\persistence.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Marmotte.ChatUi.Domain/Marmotte.ChatUi.Domain.csproj" />

@@ -142,7 +142,8 @@
         "type": "Project",
         "dependencies": {
           "Marmotte.ChatUi.Application": "[1.0.0, )",
-          "Marmotte.ChatUi.Domain": "[1.0.0, )"
+          "Marmotte.ChatUi.Domain": "[1.0.0, )",
+          "Npgsql": "[10.0.0, )"
         }
       },
       "marmotte.chatui.servicedefaults": {
@@ -164,6 +165,12 @@
         "dependencies": {
           "Microsoft.Extensions.ServiceDiscovery.Abstractions": "10.11.1"
         }
+      },
+      "Npgsql": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.0, )",
+        "resolved": "10.0.0",
+        "contentHash": "xZAYhPOU2rUIFpV48xsqhCx9vXs6Y+0jX2LCoSEfDFYMw9jtAOUk3iQsCnDLrFIv9NT3JGMihn7nnuZsPKqJmA=="
       },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
         "type": "CentralTransitive",

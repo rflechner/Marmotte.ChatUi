@@ -1,4 +1,5 @@
 using Marmotte.ChatUi.ServiceDefaults;
+using Marmotte.ChatUi.Web;
 using Marmotte.ChatUi.Web.Components;
 using Marmotte.ChatUi.Web.Identity;
 
@@ -8,6 +9,7 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.AddHostIdentity();
+builder.AddHostPersistence();
 
 var app = builder.Build();
 

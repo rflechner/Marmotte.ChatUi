@@ -23,7 +23,7 @@ using Microsoft.IdentityModel.Tokens;
 namespace Marmotte.ChatUi.Web.Tests;
 
 /// <summary>Runs the actual host and OIDC/cookie handlers with signed test tokens, isolated cookies, an ephemeral key ring, and a controlled clock.</summary>
-internal sealed partial class OidcTestHost : WebApplicationFactory<Program>
+internal sealed partial class OidcTestHost(string? databaseConnection = null, string? keyDirectory = null) : WebApplicationFactory<Program>
 {
     internal const string Issuer = "https://identity.example/realms/test";
     internal TestClock Clock { get; } = new() { Now = DateTimeOffset.UtcNow };
@@ -36,9 +36,18 @@ internal sealed partial class OidcTestHost : WebApplicationFactory<Program>
         builder.UseSetting("Authentication:Authority", Issuer);
         builder.UseSetting("Authentication:ClientId", "test-web");
         builder.UseSetting("Authentication:ClientSecret", "test-client-secret");
+        if (databaseConnection is not null)
+        {
+            builder.UseSetting("ConnectionStrings:chatdb", databaseConnection);
+            builder.UseSetting("Persistence:KeyDirectory", keyDirectory);
+        }
+
         builder.ConfigureServices(services =>
         {
-            services.AddDataProtection().UseEphemeralDataProtectionProvider();
+            if (databaseConnection is null)
+            {
+                services.AddDataProtection().UseEphemeralDataProtectionProvider();
+            }
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Clock);
             services.PostConfigure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, options =>

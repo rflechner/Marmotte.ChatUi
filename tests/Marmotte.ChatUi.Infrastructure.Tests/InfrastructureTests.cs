@@ -26,6 +26,7 @@ public sealed partial class InfrastructureTests
         timeout.CancelAfter(TimeSpan.FromMinutes(5));
         var cancellationToken = timeout.Token;
         var volumeName = $"marmotte-infrastructure-test-{Guid.NewGuid():N}";
+        var keyDirectory = Path.Combine(Path.GetTempPath(), $"marmotte-infrastructure-keys-{Guid.NewGuid():N}");
         var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var webPort = GetAvailablePort();
         var keycloakPort = GetAvailablePort();
@@ -43,6 +44,7 @@ public sealed partial class InfrastructureTests
         string[] arguments =
         [
             $"--Infrastructure:PostgresVolume={volumeName}",
+            $"--Infrastructure:KeyDirectory={keyDirectory}",
             $"--Infrastructure:WebPort={webPort.ToString(CultureInfo.InvariantCulture)}",
             $"--Infrastructure:KeycloakPort={keycloakPort.ToString(CultureInfo.InvariantCulture)}",
             $"--Infrastructure:PgAdminPort={pgAdminPort.ToString(CultureInfo.InvariantCulture)}",
@@ -79,6 +81,7 @@ public sealed partial class InfrastructureTests
                 await chat.OpenAsync(cancellationToken);
                 Assert.Equal("0.8.7", await ExecuteScalarAsync(chat, "SELECT extversion FROM pg_extension WHERE extname = 'vector'", cancellationToken));
                 Assert.Equal("marmotte_chat", await ExecuteScalarAsync(chat, "SELECT current_database()", cancellationToken));
+                Assert.Equal(2L, await ExecuteScalarAsync(chat, "SELECT count(*) FROM chat.schema_migrations", cancellationToken));
 
                 await using var identity = new NpgsqlConnection(await app.GetConnectionStringAsync("keycloakdb", cancellationToken));
                 await identity.OpenAsync(cancellationToken);
@@ -128,6 +131,10 @@ public sealed partial class InfrastructureTests
         finally
         {
             await RemoveTestVolumeAsync(volumeName);
+            if (Directory.Exists(keyDirectory))
+            {
+                Directory.Delete(keyDirectory, recursive: true);
+            }
         }
     }
 

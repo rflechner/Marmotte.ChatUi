@@ -8,7 +8,7 @@ Cette feuille de route décline les décisions de [l’architecture](ARCHITECTUR
 
 ## Point de départ
 
-M1 à M4 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire et identité OIDC avec sessions serveur et isolation utilisateur. Sur les 82 tâches ci-dessous, 26 sont terminées et 56 restent ouvertes. L’UI de chat, la persistance métier, les intégrations de modèles et la publication NuGet restent prévues.
+M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire, identité OIDC avec sessions serveur et isolation utilisateur, et persistance PostgreSQL avec secrets protégés. Sur les 82 tâches ci-dessous, 34 sont terminées et 48 restent ouvertes. L’UI de chat, les intégrations de modèles et la publication NuGet restent prévues.
 
 ## Périmètre et suivi
 
@@ -121,16 +121,18 @@ M1 à M4 sont terminés : socle de la solution, domaine et cas d’usage autoris
 
 **Dépendances:** [M2](#milestone-2), [M3](#milestone-3), [M4](#milestone-4).
 
-- [ ] **5.1** — Choisir et documenter l’approche d’accès aux données, en confinant les dépendances ORM ou SQL à Persistence.PostgreSql.
-- [ ] **5.2** — Définir les mappings, clés, index et migrations des conversations, messages, profils, préférences et métadonnées de pièces jointes, sans tables d’embeddings spéculatives.
-- [ ] **5.3** — Implémenter les repositories avec filtrage par utilisateur, pagination, annulation et mapping vers le domaine ou les DTO internes ; n’exposer aucun type propre à la base.
-- [ ] **5.4** — Définir les transactions et la gestion de concurrence pour l’ordre des messages, les générations partielles, les envois répétés et les références de pièces jointes.
-- [ ] **5.5** — Persister les profils de connexion et préférences d’UI, notamment le thème et le modèle ou profil sélectionné, avec validation des valeurs.
-- [ ] **5.6** — Choisir et implémenter la protection et la récupération des identifiants d’accès aux modèles séparément des paramètres ordinaires ; exclure les secrets des données renvoyées à l’UI et des logs.
-- [ ] **5.7** — Implémenter la séquence de migration au démarrage et vérifier l’initialisation neuve, les mises à niveau d’une base existante et la persistance entre redémarrages.
-- [ ] **5.8** — Exécuter des tests d’intégration PostgreSQL sur les repositories, la propriété, l’ordre, la concurrence et les règles de suppression ou conservation.
+- [x] **5.1** — Choisir et documenter l’approche d’accès aux données, en confinant les dépendances ORM ou SQL à Persistence.PostgreSql.
+- [x] **5.2** — Définir les mappings, clés, index et migrations des conversations, messages, profils, préférences et métadonnées de pièces jointes, sans tables d’embeddings spéculatives.
+- [x] **5.3** — Implémenter les repositories avec filtrage par utilisateur, pagination, annulation et mapping vers le domaine ou les DTO internes ; n’exposer aucun type propre à la base.
+- [x] **5.4** — Définir les transactions et la gestion de concurrence pour l’ordre des messages, les générations partielles, les envois répétés et les références de pièces jointes.
+- [x] **5.5** — Persister les profils de connexion et préférences d’UI, notamment le thème et le modèle ou profil sélectionné, avec validation des valeurs.
+- [x] **5.6** — Choisir et implémenter la protection et la récupération des identifiants d’accès aux modèles séparément des paramètres ordinaires ; exclure les secrets des données renvoyées à l’UI et des logs.
+- [x] **5.7** — Implémenter la séquence de migration au démarrage et vérifier l’initialisation neuve, les mises à niveau d’une base existante et la persistance entre redémarrages.
+- [x] **5.8** — Exécuter des tests d’intégration PostgreSQL sur les repositories, la propriété, l’ordre, la concurrence et les règles de suppression ou conservation.
 
 **Critère de validation:** L’historique et les paramètres d’un utilisateur authentifié survivent à un redémarrage, avec migrations, pagination et isolation vérifiées sur PostgreSQL.
+
+**Validation (2026-11-26) :** Sur macOS ARM64 avec le SDK 10.0.401, restauration verrouillée, compilation Release (sans avertissement ni erreur), formatage/analyseurs et les 83 tests courants passent. Les huit tests PostgreSQL optionnels passent, dont redémarrage hôte/base authentifié, récupération des secrets et refus des clés absentes/données altérées, isolation, pagination, révisions concurrentes, suppression/conservation, annulation sous verrou et mise à niveau depuis le schéma 001. Le test Aspire réel passe aussi ses contrôles pgvector/Keycloak/migrations métier sur trois démarrages. La CI inclut désormais la suite PostgreSQL ; aucune exécution GitHub Actions ni déploiement de production n’est revendiqué. Écritures de l’historique complet, fichiers de clés locaux non chiffrés et travaux UI/uploads/récupération différés sont décrits dans [persistance](docs/persistence.fr.md).
 
 <a id="milestone-6"></a>
 

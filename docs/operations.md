@@ -4,7 +4,7 @@ English | [Français](operations.fr.md)
 
 ## Implemented scope
 
-M3 supplies local Aspire orchestration, PostgreSQL with pgvector, a persistent Keycloak realm/client, and Web health/telemetry defaults. M4 adds OIDC sign-in/sign-out, a protected workspace, and server session/ownership checks. Business repositories/migrations (M5), model calls (M6), and uploads remain unimplemented. No production deployment is configured.
+M3 supplies local Aspire orchestration, PostgreSQL with pgvector, a persistent Keycloak realm/client, and Web health/telemetry defaults. M4 adds OIDC sign-in/sign-out, a protected workspace, and server session/ownership checks. M5 adds business repositories, migrations, and protected model credentials. Model calls (M6) and uploads remain unimplemented. No production deployment is configured.
 
 ## Local startup and shutdown
 
@@ -66,7 +66,7 @@ Aspire creates missing databases on each start. A separate short-lived container
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-This runs on **every AppHost start**, including existing volumes, unlike first-boot image scripts. It only affects `marmotte_chat`; no embeddings or business tables are created. Connection attempts are bounded to 15 seconds, statements to 30 seconds, and lock waits to 10 seconds. `psql` fails on SQL errors, and Web waits for its successful exit. Database schema migrations remain M5 work. The [pgvector documentation](https://github.com/pgvector/pgvector#docker) describes the upstream image and extension.
+This runs on **every AppHost start**, including existing volumes, unlike first-boot image scripts. It only affects `marmotte_chat`; no embeddings or business tables are created. Connection attempts are bounded to 15 seconds, statements to 30 seconds, and lock waits to 10 seconds. `psql` fails on SQL errors, and Web waits for its successful exit. Web applies the M5 business schema before serving requests; see [persistence](persistence.md) for migration history and upgrades. The [pgvector documentation](https://github.com/pgvector/pgvector#docker) describes the upstream image and extension.
 
 Changing a PostgreSQL major version requires a migration/export strategy; do not point a new major version at the existing volume. Deleting the volume removes **both application and identity data**. Normal shutdown and the automated checks do not delete the development volume.
 
@@ -82,7 +82,7 @@ The bootstrap admin is `admin`; its generated password is a secret parameter in 
 
 ## Signing in and sessions
 
-In the Keycloak admin console, select realm `marmotte`, open **Users**, and create two enabled development users with distinct usernames, first/last names, and email addresses. Set passwords under **Credentials**; temporary passwords require a change on first login. No account/password is committed. Open Web, choose **Sign in to your workspace**, and enter the user's credentials on Keycloak. Use separate browser profiles or a private window for independent users. The protected workspace displays the signed-in name; chat and persistence are still pending.
+In the Keycloak admin console, select realm `marmotte`, open **Users**, and create two enabled development users with distinct usernames, first/last names, and email addresses. Set passwords under **Credentials**; temporary passwords require a change on first login. No account/password is committed. Open Web, choose **Sign in to your workspace**, and enter the user's credentials on Keycloak. Use separate browser profiles or a private window for independent users. The protected workspace displays the signed-in name; chat screens are still pending; configured application services persist through PostgreSQL.
 
 Aspire injects the confidential client's settings. Standalone Web accepts the same keys below (environment variables use `__`). Keep the client secret in Web user secrets or a secret store, separately from model-server credentials. All three OIDC keys must be present together. HTTPS is required except for loopback HTTP in Development. Authority URLs cannot contain user information, query strings, or fragments and must match the issuer exactly. The callback origin must match the actual browser URL and Keycloak registration.
 
@@ -99,9 +99,13 @@ The HttpOnly, SameSite=Lax cookie contains a protected random ticket reference. 
 
 **Sign out** submits an antiforgery-protected POST. Web first revokes the local ticket, then redirects to Keycloak and back to `/`. A remote failure still ends the local session, although Keycloak SSO may remain active. Another user's independent session stays active. Cookie replay after logout is rejected.
 
-This is a single-process POC: Web restart clears all sessions. Multiple instances require a shared ticket/revocation store and protected shared data-protection keys. Keycloak-initiated/back-channel logout, administrator revocation propagation, refresh tokens, and automatic cancellation of in-flight work are not implemented. Remote revocation takes effect at the next sign-in or local expiry. Before production, define those policies, trusted reverse proxies/forwarded headers, HTTPS origins, secret rotation, key protection, and least-privilege database roles. Changing the issuer changes ownership IDs and requires a migration. Database and stored-file authorization still require M5/M9 integration checks.
+This is a single-process POC: Web restart clears all sessions. Multiple instances require a shared ticket/revocation store and protected shared data-protection keys. Keycloak-initiated/back-channel logout, administrator revocation propagation, refresh tokens, and automatic cancellation of in-flight work are not implemented. Remote revocation takes effect at the next sign-in or local expiry. Before production, define those policies, trusted reverse proxies/forwarded headers, HTTPS origins, secret rotation, key protection, and least-privilege database roles. Changing the issuer changes ownership IDs and requires a migration. M5 verifies database authorization with authenticated users and real PostgreSQL; binary file authorization remains M9 work.
 
 References: [ASP.NET Core OIDC](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-oidc-web-authentication?view=aspnetcore-10.0) and [Blazor authentication state](https://learn.microsoft.com/en-us/aspnet/core/blazor/security/authentication-state?view=aspnetcore-10.0).
+
+## Business persistence and credential keys
+
+With `ConnectionStrings:chatdb` configured, Web registers the application services and runs business migrations before readiness. Aspire supplies this connection automatically. `Persistence:KeyDirectory` selects the absolute directory for Data Protection keys; Aspire can forward `Infrastructure:KeyDirectory`. The default is `Environment.SpecialFolder.LocalApplicationData/Marmotte.ChatUi/keys`. Keep it private and back it up separately from PostgreSQL; the local POC does not encrypt these key files at rest. See [persistence](persistence.md) for the schema, migration/rollback behavior, concurrency, deletion/retention, credential recovery, and verification commands.
 
 ## Configuration and secrets
 
@@ -122,7 +126,7 @@ dotnet user-secrets set "Development:ExampleSecret" "local-example-only" --proje
 dotnet user-secrets remove "Development:ExampleSecret" --project src/Marmotte.ChatUi.AppHost
 ```
 
-No credentials belong in tracked JSON, launch profiles, logs, or examples. Model credentials will be separate from OIDC credentials. Ordinary AppHost overrides are:
+No credentials belong in tracked JSON, launch profiles, logs, or examples. Model credentials are encrypted separately from OIDC credentials; retain the external Data Protection key directory with database backups. Ordinary AppHost overrides are:
 
 | Key | Default | Meaning |
 | --- | --- | --- |
@@ -158,4 +162,5 @@ The opt-in [infrastructure test](../tests/Marmotte.ChatUi.Infrastructure.Tests/I
 - Test interruption: a force-killed test process may leave a `marmotte-infrastructure-test-*` volume. Inspect its exact name and ensure no container uses it before removing that test volume; never prune all volumes.
 - Sign-in unavailable: verify all three `Authentication` settings, discovery reachability from Web, matching client secrets on existing realms, and the registered redirect origin. The error page omits provider diagnostics.
 - Repeated sign-in: ID-token expiry may be earlier than the session ceiling; sign in again. A Web restart also ends all sessions.
-- Model/repository settings appear inactive in Web: these adapters remain future milestones.
+- Repository settings appear inactive: configure `ConnectionStrings:chatdb` and verify startup migrations. Settings screens and model calls remain M8/M6 work.
+- Credential recovery fails after restore: restore the matching Data Protection key directory and application name; without the old keys, replace the affected model credentials.

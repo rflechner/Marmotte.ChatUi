@@ -4,7 +4,7 @@
 
 ## Statut et objectif
 
-Ce document distingue le socle M1–M4 implémenté de l’architecture produit cible. Les neuf projets sources, l’hôte Blazor Interactive Server, le domaine et ses cas d’usage autorisés, l’infrastructure locale Aspire et l’adaptateur d’identité OIDC existent désormais. PostgreSQL/pgvector et Keycloak démarrent avec données persistantes et contrôles de disponibilité ; ServiceDefaults fournit les diagnostics. Web authentifie les utilisateurs et protège l’espace de travail et l’endpoint de circuit. La persistance métier, les adaptateurs de modèles, les composants de chat réutilisables et la publication NuGet restent prévus ; les cas d’usage métier ne sont pas encore composés avec des repositories de production.
+Ce document distingue le socle M1–M5 implémenté de l’architecture produit cible. Les neuf projets sources, l’hôte Blazor Interactive Server, le domaine et ses cas d’usage autorisés, l’infrastructure locale Aspire et l’adaptateur d’identité OIDC existent désormais. PostgreSQL/pgvector et Keycloak démarrent avec données persistantes et contrôles de disponibilité ; ServiceDefaults fournit les diagnostics. Web authentifie les utilisateurs et protège l’espace de travail et l’endpoint de circuit. M5 compose les cas d’usage métier avec des repositories PostgreSQL lorsqu’une base est configurée, avec migrations et secrets de modèle protégés. Les adaptateurs de modèles, composants de chat réutilisables et publication NuGet restent prévus.
 
 Marmotte.ChatUi vise deux usages : une application de chat en .NET et Blazor, inspirée d’AnythingLLM et d’Open WebUI, et une bibliothèque de composants et widgets intégrables dans d’autres applications. L’application complète utilisera les mêmes composants que ceux distribués en NuGet.
 
@@ -35,7 +35,7 @@ Les frontières importantes correspondent à des assemblies distinctes. Il s’a
 
 ### Découpage cible
 
-Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Les deux adaptateurs métier et Components établissent encore les frontières sans leurs futures implémentations. AppHost et ServiceDefaults implémentent l’orchestration et les diagnostics M3. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
+Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Persistence.PostgreSql implémente M5 ; Infrastructure.OpenAI et Components établissent encore les frontières sans leurs futures implémentations. AppHost et ServiceDefaults implémentent l’orchestration et les diagnostics M3. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
 
 | Projet / assembly | Responsabilité | Dépendances internes principales |
 | --- | --- | --- |
@@ -69,13 +69,13 @@ Les flèches représentent les dépendances du code. À l’exécution, les cas 
 
 ## Modèle métier et contrats
 
-M2 implémente `Conversation` comme agrégat immuable contrôlant les paires de messages utilisateur/assistant ordonnées et les états de génération. `Attachment` porte des métadonnées possédées séparément ; `ConnectionProfile` et `UserPreferences` sont des instantanés de paramètres possédés distincts. GUID, horodatages UTC, révisions, règles de doublons et validation à la restauration préservent l’historique. Il ne s’agit pas encore d’un schéma de base de données.
+M2 implémente `Conversation` comme agrégat immuable contrôlant les paires de messages utilisateur/assistant ordonnées et les états de génération. `Attachment` porte des métadonnées possédées séparément ; `ConnectionProfile` et `UserPreferences` sont des instantanés de paramètres possédés distincts. GUID, horodatages UTC, révisions, règles de doublons et validation à la restauration préservent l’historique. M5 mappe ces objets vers un schéma relationnel sans exposer de types de base de données.
 
 L’application expose la création, pagination, lecture, suppression, soumission de texte, enregistrement/annulation des réponses et gestion des paramètres avec autorisation. L’identité courante et les repositories sont des ports ; chaque opération tire le propriétaire d’une identité serveur vérifiée et contrôle les propriétaires renvoyés. Les secrets des profils sont absents de ces contrats.
 
 Les écritures de conversation comparent les révisions et valident atomiquement les messages et références de pièces jointes. Les listes sont bornées et ordonnées ; le chargement d’une conversation matérialise actuellement tout l’historique. Les repositories n’exposent aucun type de base de données. Les ports de fournisseur définissent les capacités et flux de réponse, sans appel de modèle concret ni orchestration. Les ports de stockage binaire et préparation multimodale restent pour M9/M11.
 
-Consulter la [référence du cœur](docs/core.fr.md) pour les invariants, transitions, API publiques, annulation, cohérence, durées de vie et limites. M4 vérifie l’identité OIDC et le refus d’accès entre utilisateurs avec des repositories de test. Le contrôle sur les véritables enregistrements PostgreSQL reste pour M5, et l’accès aux pièces jointes stockées pour M9.
+Consulter la [référence du cœur](docs/core.fr.md) pour les invariants, transitions, API publiques, annulation, cohérence, durées de vie et limites. M4 vérifie l’identité OIDC et le refus d’accès entre utilisateurs avec des repositories de test. M5 vérifie le contrôle sur de véritables enregistrements PostgreSQL et des utilisateurs authentifiés ; l’accès binaire aux pièces jointes reste pour M9.
 
 ## Composants Blazor et distribution NuGet
 
@@ -115,7 +115,7 @@ Attention à la topologie d’exécution : localhost désigne la machine ou le c
 
 ## Persistance PostgreSQL et pgvector
 
-L’assembly Persistence.PostgreSql contient l’ensemble des détails relationnels : implémentations de repository, mappings, index, migrations, transactions et types spécifiques au fournisseur. Le choix d’un ORM ou d’un accès SQL direct reste ouvert à ce stade.
+L’assembly Persistence.PostgreSql contient l’ensemble des détails relationnels : implémentations de repository, mappings, index, migrations, transactions et types spécifiques au fournisseur. M5 retient du SQL paramétré avec Npgsql 10.0.0, des filtres de propriétaire explicites, des clés étrangères composites avec propriétaire, des révisions optimistes pour les conversations et des verrous transactionnels pour les suppressions de paramètres. La [référence de persistance](docs/persistence.fr.md) décrit mappings, conservation, secrets chiffrés, gestion des clés, migrations au démarrage et tests d’intégration.
 
 PostgreSQL conserve les conversations, messages, profils, préférences et métadonnées de pièces jointes. Le stockage des binaires dispose d’un port distinct pour éviter de figer le domaine sur une base ou un système de fichiers. L’adaptateur initial et sa politique de conservation seront définis lors de l’implémentation des uploads.
 
@@ -127,7 +127,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 Cette commande active une extension déjà installée ; elle n’installe pas ses fichiers sur le serveur. L’installation et l’activation sont décrites dans la [documentation officielle pgvector](https://github.com/pgvector/pgvector#installation).
 
-M3 contrôle l’activation sur un volume neuf, l’idempotence au redémarrage et la réparation d’une base existante après suppression de l’extension, en conservant des données témoins applicatives et d’identité. Le volume survit à l’arrêt des conteneurs. Les migrations métier restent prévues pour M5 ; les scripts du premier démarrage ne les remplacent pas.
+M3 contrôle l’activation sur un volume neuf, l’idempotence au redémarrage et la réparation d’une base existante après suppression de l’extension, en conservant des données témoins applicatives et d’identité. Le volume survit à l’arrêt des conteneurs. Web applique désormais les migrations métier embarquées et leurs empreintes sous verrou consultatif transactionnel avant de servir les requêtes. Les scripts du premier démarrage ne remplacent pas les migrations.
 
 Les dimensions des embeddings, modèles, index vectoriels et règles de recherche seront décidés avec une fonctionnalité qui les utilise. Aucun embedding ni schéma de recherche spéculatif n’est requis pour le chat initial.
 
@@ -185,4 +185,4 @@ Les images de référence et leur provenance sont conservées dans [docs/images/
 
 ## Décisions restant à concrétiser
 
-.NET 10, Aspire 13.6.5, les dépendances fixées et le rendu Interactive Server sont retenus dans M1 ; consulter le [guide de développement](docs/development.fr.md) et le [guide d’exploitation](docs/operations.fr.md). L’accès aux données, le stockage des binaires, le moteur de rendu PDF et la cible de production seront précisés lors de l’implémentation correspondante. Ces points ouverts ne remettent pas en cause les frontières de dépendance, PostgreSQL, pgvector, OIDC/Keycloak ou la distribution des composants en NuGet.
+.NET 10, Aspire 13.6.5, les dépendances fixées et le rendu Interactive Server sont retenus dans M1 ; consulter le [guide de développement](docs/development.fr.md) et le [guide d’exploitation](docs/operations.fr.md). M5 retient SQL/Npgsql et Data Protection pour les secrets. Le stockage des binaires, le moteur de rendu PDF et la cible de production seront précisés lors de l’implémentation correspondante. Ces points ouverts ne remettent pas en cause les frontières de dépendance, PostgreSQL, pgvector, OIDC/Keycloak ou la distribution des composants en NuGet.

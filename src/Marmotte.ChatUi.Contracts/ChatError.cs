@@ -8,7 +8,8 @@ public enum ChatErrorCode
     InvalidRequest,
     Conflict,
     UnsupportedCapability,
-    GenerationFailed
+    GenerationFailed,
+    StorageUnavailable
 }
 
 /// <summary>A safe application failure. NotFound intentionally covers both absent and other users' resources.</summary>
@@ -21,6 +22,7 @@ public sealed class ChatOperationException : Exception
         ChatErrorCode.InvalidRequest => "The request is invalid.",
         ChatErrorCode.Conflict => "The operation conflicts with the current state. Reload before retrying.",
         ChatErrorCode.UnsupportedCapability => "The requested capability is not available.",
+        ChatErrorCode.StorageUnavailable => "Storage is unavailable. Reload before retrying.",
         _ => "The response could not be generated."
     })
     {

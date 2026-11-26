@@ -4,7 +4,7 @@
 
 ## Périmètre implémenté
 
-M3 fournit l’orchestration locale Aspire, PostgreSQL avec pgvector, un realm/client Keycloak persistant et les paramètres de santé/télémétrie de Web. M4 ajoute connexion/déconnexion OIDC, espace de travail protégé et contrôles serveur de session/propriété. Les repositories/migrations métier (M5), appels de modèles (M6) et uploads restent non implémentés. Aucun déploiement de production n’est configuré.
+M3 fournit l’orchestration locale Aspire, PostgreSQL avec pgvector, un realm/client Keycloak persistant et les paramètres de santé/télémétrie de Web. M4 ajoute connexion/déconnexion OIDC, espace de travail protégé et contrôles serveur de session/propriété. M5 ajoute repositories métier, migrations et secrets de modèle protégés. Les appels de modèles (M6) et uploads restent non implémentés. Aucun déploiement de production n’est configuré.
 
 ## Démarrage et arrêt locaux
 
@@ -66,7 +66,7 @@ Aspire crée les bases absentes à chaque démarrage. Un conteneur éphémère d
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-Cette opération s’exécute à **chaque démarrage de l’AppHost**, y compris avec un volume existant, contrairement aux scripts du premier démarrage de l’image. Elle ne concerne que `marmotte_chat` ; aucune table métier ni aucun embedding n’est créé. Les connexions sont limitées à 15 secondes, les instructions à 30 secondes et l’attente des verrous à 10 secondes. `psql` échoue sur les erreurs SQL et Web attend sa réussite. Les migrations du schéma métier restent prévues pour M5. La [documentation pgvector](https://github.com/pgvector/pgvector#docker) décrit l’image et l’extension amont.
+Cette opération s’exécute à **chaque démarrage de l’AppHost**, y compris avec un volume existant, contrairement aux scripts du premier démarrage de l’image. Elle ne concerne que `marmotte_chat` ; aucune table métier ni aucun embedding n’est créé. Les connexions sont limitées à 15 secondes, les instructions à 30 secondes et l’attente des verrous à 10 secondes. `psql` échoue sur les erreurs SQL et Web attend sa réussite. Web applique le schéma métier M5 avant de servir les requêtes ; voir [persistance](persistence.fr.md) pour l’historique des migrations et les mises à niveau. La [documentation pgvector](https://github.com/pgvector/pgvector#docker) décrit l’image et l’extension amont.
 
 Un changement de version majeure PostgreSQL nécessite une stratégie de migration/export ; ne pas monter le volume existant sur une nouvelle version majeure. Supprimer le volume efface **les données applicatives et d’identité**. L’arrêt normal et les vérifications automatisées ne suppriment pas le volume de développement.
 
@@ -82,7 +82,7 @@ L’administrateur initial est `admin` ; son mot de passe généré est un param
 
 ## Connexion et sessions
 
-Dans la console d’administration Keycloak, sélectionner le realm `marmotte`, ouvrir **Users** et créer deux utilisateurs de développement activés avec noms d’utilisateur distincts, prénoms/noms et adresses e-mail. Définir les mots de passe dans **Credentials** ; les mots de passe temporaires exigent un changement à la première connexion. Aucun compte/mot de passe n’est versionné. Ouvrir Web, choisir **Sign in to your workspace**, puis saisir les identifiants utilisateur dans Keycloak. Utiliser des profils de navigateur distincts ou une fenêtre privée pour des utilisateurs indépendants. L’espace protégé affiche le nom connecté ; chat et persistance restent à venir.
+Dans la console d’administration Keycloak, sélectionner le realm `marmotte`, ouvrir **Users** et créer deux utilisateurs de développement activés avec noms d’utilisateur distincts, prénoms/noms et adresses e-mail. Définir les mots de passe dans **Credentials** ; les mots de passe temporaires exigent un changement à la première connexion. Aucun compte/mot de passe n’est versionné. Ouvrir Web, choisir **Sign in to your workspace**, puis saisir les identifiants utilisateur dans Keycloak. Utiliser des profils de navigateur distincts ou une fenêtre privée pour des utilisateurs indépendants. L’espace protégé affiche le nom connecté ; les écrans de chat restent à venir ; les services applicatifs configurés persistent via PostgreSQL.
 
 Aspire injecte les paramètres du client confidentiel. Web autonome accepte les mêmes clés ci-dessous (les variables d’environnement utilisent `__`). Conserver le secret du client dans les user secrets Web ou un coffre, séparément des identifiants des modèles. Les trois clés OIDC doivent être présentes ensemble. HTTPS est obligatoire sauf HTTP en boucle locale en Development. L’autorité ne peut contenir ni informations utilisateur, ni query string, ni fragment et doit correspondre exactement à l’émetteur. L’origine du callback doit correspondre à l’URL réelle du navigateur et à l’enregistrement Keycloak.
 
@@ -99,9 +99,13 @@ Le cookie HttpOnly, SameSite=Lax contient une référence aléatoire protégée 
 
 **Sign out** envoie un POST protégé par antiforgery. Web révoque d’abord le ticket local, puis redirige vers Keycloak et revient à `/`. Un échec distant termine quand même la session locale, mais la session SSO Keycloak peut rester active. La session indépendante d’un autre utilisateur reste active. Rejouer un cookie après déconnexion est refusé.
 
-Il s’agit d’un POC à processus unique : un redémarrage Web efface toutes les sessions. Plusieurs instances exigent un stockage partagé de tickets/révocations et des clés de protection des données partagées et protégées. La déconnexion initiée par Keycloak/back-channel, la propagation des révocations administrateur, les refresh tokens et l’annulation automatique des opérations en cours ne sont pas implémentés. Une révocation distante prend effet à la prochaine connexion ou à l’expiration locale. Avant production, définir ces politiques, les reverse proxies/en-têtes transférés de confiance, les origines HTTPS, la rotation des secrets, la protection des clés et les rôles de base à privilèges minimaux. Changer l’émetteur modifie les identifiants de propriété et exige une migration. L’autorisation en base et sur fichiers stockés exige encore les tests d’intégration M5/M9.
+Il s’agit d’un POC à processus unique : un redémarrage Web efface toutes les sessions. Plusieurs instances exigent un stockage partagé de tickets/révocations et des clés de protection des données partagées et protégées. La déconnexion initiée par Keycloak/back-channel, la propagation des révocations administrateur, les refresh tokens et l’annulation automatique des opérations en cours ne sont pas implémentés. Une révocation distante prend effet à la prochaine connexion ou à l’expiration locale. Avant production, définir ces politiques, les reverse proxies/en-têtes transférés de confiance, les origines HTTPS, la rotation des secrets, la protection des clés et les rôles de base à privilèges minimaux. Changer l’émetteur modifie les identifiants de propriété et exige une migration. M5 vérifie l’autorisation en base avec des utilisateurs authentifiés et PostgreSQL ; l’autorisation sur les fichiers binaires reste pour M9.
 
 Références : [OIDC ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-oidc-web-authentication?view=aspnetcore-10.0) et [état d’authentification Blazor](https://learn.microsoft.com/en-us/aspnet/core/blazor/security/authentication-state?view=aspnetcore-10.0).
+
+## Persistance métier et clés de protection
+
+Avec `ConnectionStrings:chatdb` configuré, Web enregistre les services applicatifs et applique les migrations métier avant disponibilité. Aspire fournit automatiquement cette connexion. `Persistence:KeyDirectory` choisit le répertoire absolu des clés Data Protection ; Aspire peut transmettre `Infrastructure:KeyDirectory`. La valeur par défaut est `Environment.SpecialFolder.LocalApplicationData/Marmotte.ChatUi/keys`. Garder ce répertoire privé et le sauvegarder séparément de PostgreSQL ; le POC local ne chiffre pas ces fichiers de clés au repos. Voir [persistance](persistence.fr.md) pour schéma, migrations/rollback, concurrence, suppression/conservation, récupération des secrets et commandes de vérification.
 
 ## Configuration et secrets
 
@@ -122,7 +126,7 @@ dotnet user-secrets set "Development:ExampleSecret" "local-example-only" --proje
 dotnet user-secrets remove "Development:ExampleSecret" --project src/Marmotte.ChatUi.AppHost
 ```
 
-Aucun identifiant d’accès ne doit figurer dans les JSON versionnés, profils de lancement, journaux ou exemples. Les identifiants des modèles seront distincts de ceux d’OIDC. Les paramètres AppHost ordinaires sont :
+Aucun identifiant d’accès ne doit figurer dans les JSON versionnés, profils de lancement, journaux ou exemples. Les identifiants des modèles sont chiffrés séparément de ceux d’OIDC ; conserver le répertoire externe des clés Data Protection avec les sauvegardes de base. Les paramètres AppHost ordinaires sont :
 
 | Clé | Valeur par défaut | Signification |
 | --- | --- | --- |
@@ -158,4 +162,5 @@ Le [test d’infrastructure](../tests/Marmotte.ChatUi.Infrastructure.Tests/Infra
 - Interruption des tests : un processus tué brutalement peut laisser un volume `marmotte-infrastructure-test-*`. Inspecter son nom exact et vérifier qu’aucun conteneur ne l’utilise avant de supprimer ce volume de test ; ne jamais purger tous les volumes.
 - Connexion indisponible : vérifier les trois paramètres `Authentication`, la découverte joignable depuis Web, les secrets du client sur un realm existant et l’origine de redirection enregistrée. La page d’erreur omet les diagnostics du fournisseur.
 - Connexions répétées : l’ID token peut expirer avant le plafond de session ; se reconnecter. Un redémarrage Web termine aussi toutes les sessions.
-- Paramètres de modèle/repository inactifs dans Web : ces adaptateurs restent pour les milestones suivants.
+- Paramètres de repository inactifs : configurer `ConnectionStrings:chatdb` et vérifier les migrations au démarrage. Les écrans de paramètres et appels modèles restent pour M8/M6.
+- Récupération de secrets impossible après restauration : restaurer le répertoire de clés Data Protection et le nom d’application correspondants ; sans les anciennes clés, remplacer les secrets de modèle concernés.

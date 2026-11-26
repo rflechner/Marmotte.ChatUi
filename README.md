@@ -13,7 +13,7 @@ A .NET and Blazor chat application, with reusable components for embedding conve
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="The marmot mascot holding an Experimental Proof of Concept sign" width="320" />
 
-Milestones 1 through 4 are implemented: .NET 10/Blazor foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC sign-in/sign-out with Keycloak and user isolation. Web provides a public landing page and a protected workspace. Business persistence, model adapters, and reusable chat components remain for later milestones. No NuGet package has been published.
+Milestones 1 through 5 are implemented: .NET 10/Blazor foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC sign-in/sign-out with Keycloak and user isolation. Web provides a public landing page and a protected workspace. PostgreSQL now persists history, settings, attachment metadata, and protected model credentials, with startup migrations. Model adapters and reusable chat components remain for later milestones. No NuGet package has been published.
 
 ## Product direction
 
@@ -30,6 +30,7 @@ Milestones 1 through 4 are implemented: .NET 10/Blazor foundations, the domain a
 - [Roadmap and numbered milestones](roadmap.md)
 - [Architecture and scope](ARCHITECTURE.md)
 - [Domain model, ports, and use cases](docs/core.md)
+- [PostgreSQL, migrations, and credential keys](docs/persistence.md)
 - [Contribution guidelines](AGENTS.md)
 - [Mascot and image provenance](docs/images/README.md)
 

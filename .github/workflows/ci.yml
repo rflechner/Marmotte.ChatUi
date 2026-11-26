@@ -45,3 +45,7 @@ jobs:
         env:
           MARMOTTE_RUN_INFRASTRUCTURE_TESTS: '1'
         run: dotnet test --project tests/Marmotte.ChatUi.Infrastructure.Tests --configuration Release --no-build --no-restore
+      - name: Verify PostgreSQL repositories and authenticated persistence
+        env:
+          MARMOTTE_RUN_INFRASTRUCTURE_TESTS: '1'
+        run: dotnet test --project tests/Marmotte.ChatUi.Web.Tests --configuration Release --no-build --no-restore

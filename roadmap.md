@@ -8,7 +8,7 @@ This roadmap turns the [architecture decisions](ARCHITECTURE.md) into actionable
 
 ## Starting point
 
-M1 through M4 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC identity with server-side session and user isolation. Of the 82 tasks below, 26 are complete and 56 remain open. Chat UI, business persistence, model integrations, and NuGet publication remain planned.
+M1 through M5 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, OIDC identity with server-side session and user isolation, and PostgreSQL persistence with protected credentials. Of the 82 tasks below, 34 are complete and 48 remain open. Chat UI, model integrations, and NuGet publication remain planned.
 
 ## Scope and tracking
 
@@ -121,16 +121,18 @@ M1 through M4 are complete: solution foundations, the domain and authorized use 
 
 **Dependencies:** [M2](#milestone-2), [M3](#milestone-3), [M4](#milestone-4).
 
-- [ ] **5.1** — Choose and document the data access approach, keeping ORM or SQL dependencies inside Persistence.PostgreSql.
-- [ ] **5.2** — Define mappings, keys, indexes, and migrations for conversations, messages, profiles, preferences, and attachment metadata, without speculative embedding tables.
-- [ ] **5.3** — Implement repository operations with user scoping, pagination, cancellation, and internal domain/DTO mapping; expose no database-specific types.
-- [ ] **5.4** — Define transaction and concurrency behavior for message ordering, partial generations, repeated submissions, and attachment references.
-- [ ] **5.5** — Persist connection profiles and UI preferences, including the theme and selected model/profile, with validated values.
-- [ ] **5.6** — Choose and implement protection and retrieval of model credentials separately from ordinary settings; exclude secrets from returned UI data and logs.
-- [ ] **5.7** — Implement the migration startup sequence and verify fresh initialization, upgrades of an existing database, and persistence across restarts.
-- [ ] **5.8** — Run PostgreSQL integration tests for repository behavior, ownership, ordering, concurrency, and deletion/retention rules.
+- [x] **5.1** — Choose and document the data access approach, keeping ORM or SQL dependencies inside Persistence.PostgreSql.
+- [x] **5.2** — Define mappings, keys, indexes, and migrations for conversations, messages, profiles, preferences, and attachment metadata, without speculative embedding tables.
+- [x] **5.3** — Implement repository operations with user scoping, pagination, cancellation, and internal domain/DTO mapping; expose no database-specific types.
+- [x] **5.4** — Define transaction and concurrency behavior for message ordering, partial generations, repeated submissions, and attachment references.
+- [x] **5.5** — Persist connection profiles and UI preferences, including the theme and selected model/profile, with validated values.
+- [x] **5.6** — Choose and implement protection and retrieval of model credentials separately from ordinary settings; exclude secrets from returned UI data and logs.
+- [x] **5.7** — Implement the migration startup sequence and verify fresh initialization, upgrades of an existing database, and persistence across restarts.
+- [x] **5.8** — Run PostgreSQL integration tests for repository behavior, ownership, ordering, concurrency, and deletion/retention rules.
 
 **Exit criterion:** An authenticated user's history and settings survive an application restart, with migrations, paging, and isolation verified against PostgreSQL.
+
+**Validation (2026-11-26):** On macOS ARM64 with SDK 10.0.401, locked restore, Release build (zero warnings/errors), formatting/analyzers, and all 83 routine tests pass. The eight opt-in PostgreSQL tests pass, including authenticated host/database restart, credential recovery and missing-key/tamper rejection, owner isolation, paging, concurrent revisions, deletion/retention, cancellation under a lock, and upgrade from schema 001. The real Aspire test also passes its three-start pgvector/Keycloak/business-migration checks. CI now includes the PostgreSQL suite; no GitHub Actions execution or production deployment is claimed. Whole-history writes, local unencrypted key files, and deferred UI/upload/recovery work are documented in [persistence](docs/persistence.md).
 
 <a id="milestone-6"></a>
 

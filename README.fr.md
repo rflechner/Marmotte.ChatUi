@@ -13,7 +13,7 @@ Une application de chat en .NET et Blazor, et des composants réutilisables pour
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="La mascotte marmotte avec une pancarte Experimental Proof of Concept" width="320" />
 
-Les milestones 1 à 4 sont implémentés : socle .NET 10/Blazor, domaine et cas d’usage autorisés, infrastructure locale Aspire, connexion/déconnexion OIDC avec Keycloak et isolation utilisateur. Web fournit un accueil public et un espace protégé. La persistance métier, les adaptateurs de modèles et les composants de chat réutilisables restent pour les milestones suivants. Aucun package NuGet n’est publié.
+Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas d’usage autorisés, infrastructure locale Aspire, connexion/déconnexion OIDC avec Keycloak et isolation utilisateur. Web fournit un accueil public et un espace protégé. PostgreSQL persiste désormais historique, paramètres, métadonnées de pièces jointes et secrets de modèle protégés, avec migrations au démarrage. Les adaptateurs de modèles et composants de chat réutilisables restent pour les milestones suivants. Aucun package NuGet n’est publié.
 
 ## Direction du produit
 
@@ -30,6 +30,7 @@ Les milestones 1 à 4 sont implémentés : socle .NET 10/Blazor, domaine et cas 
 - [Roadmap et tâches par milestone](roadmap.fr.md)
 - [Architecture et périmètre](ARCHITECTURE.fr.md)
 - [Modèle métier, ports et cas d’usage](docs/core.fr.md)
+- [PostgreSQL, migrations et clés de protection](docs/persistence.fr.md)
 - [Consignes de contribution](AGENTS.fr.md)
 - [Mascotte et provenance des images](docs/images/README.fr.md)
 

@@ -71,7 +71,7 @@ var keycloak = builder.AddKeycloak("keycloak", keycloakPort)
 keycloak.WithoutHttpsCertificate();
 #pragma warning restore ASPIRECERTIFICATES001
 
-builder.AddProject<Projects.Marmotte_ChatUi_Web>("web")
+var web = builder.AddProject<Projects.Marmotte_ChatUi_Web>("web")
     .WithEndpoint("http", endpoint => endpoint.Port = webPort)
     .WithReference(chatDatabase)
     .WithReference(keycloak)
@@ -81,5 +81,10 @@ builder.AddProject<Projects.Marmotte_ChatUi_Web>("web")
     .WithHttpHealthCheck("/health")
     .WaitForCompletion(databaseInitialization)
     .WaitFor(keycloak);
+
+if (builder.Configuration["Infrastructure:KeyDirectory"] is { } keyDirectory)
+{
+    web.WithEnvironment("Persistence__KeyDirectory", keyDirectory);
+}
 
 builder.Build().Run();
