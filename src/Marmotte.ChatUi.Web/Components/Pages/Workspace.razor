@@ -1,0 +1,17 @@
+@page "/workspace"
+@attribute [Authorize]
+
+<PageTitle>Your workspace — Marmotte.ChatUi</PageTitle>
+
+<main class="foundation">
+    <h1>Your workspace</h1>
+    <AuthorizeView>
+        <p>Signed in as <strong>@context.User.Identity?.Name</strong>.</p>
+    </AuthorizeView>
+    <p><strong>Experimental POC — not production-ready.</strong></p>
+    <p>Your session is active. Conversation storage and chat will arrive in later milestones.</p>
+    <form action="/account/logout" method="post" data-enhance="false">
+        <AntiforgeryToken />
+        <button type="submit">Sign out</button>
+    </form>
+</main>

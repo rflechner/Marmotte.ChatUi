@@ -8,7 +8,7 @@ Cette feuille de route décline les décisions de [l’architecture](ARCHITECTUR
 
 ## Point de départ
 
-M1 à M3 sont terminés : le socle de la solution, le domaine et les cas d’usage autorisés, et l’infrastructure locale Aspire avec PostgreSQL/pgvector et Keycloak persistants, les contrôles de santé, les diagnostics, les tests et la configuration CI. Sur les 82 tâches ci-dessous, 20 sont terminées et 62 restent ouvertes. L’UI de chat, la persistance métier, la connexion OIDC, les intégrations de modèles et la publication NuGet restent prévues.
+M1 à M4 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire et identité OIDC avec sessions serveur et isolation utilisateur. Sur les 82 tâches ci-dessous, 26 sont terminées et 56 restent ouvertes. L’UI de chat, la persistance métier, les intégrations de modèles et la publication NuGet restent prévues.
 
 ## Périmètre et suivi
 
@@ -102,14 +102,16 @@ M1 à M3 sont terminés : le socle de la solution, le domaine et les cas d’usa
 
 **Dépendances:** [M2](#milestone-2), [M3](#milestone-3).
 
-- [ ] **4.1** — Intégrer la connexion et la déconnexion OIDC avec Keycloak dans l’hôte web, avec gestion de l’expiration des sessions et des échecs d’authentification.
-- [ ] **4.2** — Implémenter l’adaptateur d’utilisateur courant et relier l’identité applicative stable au couple émetteur/sujet OIDC plutôt qu’à l’e-mail.
-- [ ] **4.3** — Protéger les routes applicatives et les points d’entrée serveur, en gardant Keycloak et les détails d’authentification hors du package d’UI réutilisable.
-- [ ] **4.4** — Appliquer les contrôles de propriété dans les opérations applicatives et l’accès aux données ; ne pas utiliser une identité de propriétaire envoyée par le navigateur comme autorisation.
-- [ ] **4.5** — Séparer l’authentification de l’application des identifiants d’accès aux serveurs de modèles et empêcher l’exposition des secrets des profils aux autres utilisateurs.
-- [ ] **4.6** — Vérifier l’accès anonyme, les sessions expirées, la déconnexion et le refus des accès entre utilisateurs ; documenter la configuration locale de l’identité et ses limites pour la production.
+- [x] **4.1** — Intégrer la connexion et la déconnexion OIDC avec Keycloak dans l’hôte web, avec gestion de l’expiration des sessions et des échecs d’authentification.
+- [x] **4.2** — Implémenter l’adaptateur d’utilisateur courant et relier l’identité applicative stable au couple émetteur/sujet OIDC plutôt qu’à l’e-mail.
+- [x] **4.3** — Protéger les routes applicatives et les points d’entrée serveur, en gardant Keycloak et les détails d’authentification hors du package d’UI réutilisable.
+- [x] **4.4** — Appliquer les contrôles de propriété dans les opérations applicatives et l’accès aux données ; ne pas utiliser une identité de propriétaire envoyée par le navigateur comme autorisation.
+- [x] **4.5** — Séparer l’authentification de l’application des identifiants d’accès aux serveurs de modèles et empêcher l’exposition des secrets des profils aux autres utilisateurs.
+- [x] **4.6** — Vérifier l’accès anonyme, les sessions expirées, la déconnexion et le refus des accès entre utilisateurs ; documenter la configuration locale de l’identité et ses limites pour la production.
 
 **Critère de validation:** Deux utilisateurs peuvent se connecter indépendamment et les tests d’autorisation refusent l’accès aux données d’un autre utilisateur à travers les contrats applicatifs. L’application de ces contrôles aux données réellement persistées et aux pièces jointes stockées sera de nouveau vérifiée dans M5 et M9.
+
+**Validation (2026-11-26) :** Sur macOS ARM64 avec le SDK 10.0.401, restauration verrouillée, compilation Release (sans avertissement ni erreur), formatage/analyseurs et les 78 tests courants passent. Le test d’intégration Docker passe également : les vrais formulaires Keycloak authentifient deux utilisateurs indépendants, les callbacks OIDC atteignent l’espace protégé, l’antiforgery est imposé, la déconnexion initiée par Web termine les sessions Keycloak et locale, le rejeu de cookies est refusé et l’autre utilisateur reste connecté. Ce test conserve les contrôles de cycle de vie base/identité sur trois démarrages. Les tests courants exercent les jetons OIDC signés, émetteur/audience/nonce/expiration invalides, identité absente, routes/SignalR protégés, destinations de retour fixes, identités de circuit expirées/révoquées, échecs distants et accès croisés aux conversations/profils/préférences avec repositories de test. Documents bilingues et liens locaux sont vérifiés. Les sessions sont en mémoire et limitées à un processus ; la révocation initiée par Keycloak et le comportement JavaScript/WebSocket réel restent respectivement non implémentés/non vérifiés, comme détaillé dans [l’exploitation](docs/operations.fr.md) et le [développement](docs/development.fr.md). Les contrôles en base/sur fichiers restent pour M5/M9. Aucun déploiement de production ni exécution GitHub Actions n’est revendiqué.
 
 <a id="milestone-5"></a>
 

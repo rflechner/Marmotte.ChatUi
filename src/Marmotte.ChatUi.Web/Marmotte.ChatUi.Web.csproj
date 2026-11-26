@@ -3,6 +3,8 @@
     <UserSecretsId>Marmotte.ChatUi.Web.Development</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <InternalsVisibleTo Include="Marmotte.ChatUi.Web.Tests" />
     <ProjectReference Include="../Marmotte.ChatUi.Components/Marmotte.ChatUi.Components.csproj" />
     <ProjectReference Include="../Marmotte.ChatUi.Application/Marmotte.ChatUi.Application.csproj" />
     <ProjectReference Include="../Marmotte.ChatUi.Infrastructure.OpenAI/Marmotte.ChatUi.Infrastructure.OpenAI.csproj" />

@@ -4,7 +4,7 @@ English | [Français](core.fr.md)
 
 ## Implemented scope
 
-M2 implements the domain, provider-neutral ports, presentation contracts, and authorized use cases for conversations and settings. [Core tests](../tests/Marmotte.ChatUi.Core.Tests) exercise them using an in-memory test adapter and a controlled clock. No service is registered in Web yet. There is no database, OIDC adapter, model call, upload endpoint, or generation orchestrator in this milestone.
+M2 implements the domain, provider-neutral ports, presentation contracts, and authorized use cases for conversations and settings. [Core tests](../tests/Marmotte.ChatUi.Core.Tests) exercise them using an in-memory test adapter and a controlled clock. M4 registers the scoped OIDC `ICurrentUser` adapter in Web and tests it with these use cases. Business services await production repositories before host composition; database persistence, model calls, uploads, and generation orchestration remain unimplemented.
 
 The AI model is the remote model selected in a connection profile. The domain model below describes application behavior and has no dependency on that provider, Blazor, or persistence libraries. Domain and Contracts have no project or package dependency; Application references only Domain and Contracts.
 
@@ -12,7 +12,7 @@ The AI model is the remote model selected in a connection profile. The domain mo
 
 | Type | Responsibility and invariants |
 | --- | --- |
-| `UserId` | Case-sensitive opaque application identity, 1–256 characters, not blank. The future identity adapter maps a trusted issuer/subject pair to this stable ID; a browser owner field is never accepted. |
+| `UserId` | Case-sensitive opaque application identity, 1–256 characters, not blank. The M4 identity adapter maps a trusted issuer/subject pair to this stable ID; a browser owner field is never accepted. |
 | `Conversation` | Immutable aggregate root owning its complete ordered history. Nonempty GUID, immutable owner, title of 1–200 characters, UTC timestamps, positive revision. The repository saves the whole aggregate atomically. |
 | `Message` | Immutable child of a conversation, with its own nonempty GUID, a submission GUID, one-based sequence, role, content, lifecycle, and UTC timestamps. Never saved independently of its conversation. |
 | `Attachment` | Independently owned metadata referenced by a user message: GUID, owner, file name, media type, positive byte size, creation time, preparation state, optional positive width/height supplied together. No bytes, storage path, or public URL. |
@@ -66,7 +66,7 @@ Profiles require an absolute HTTP(S) endpoint without user info, query, or fragm
 
 | Port | Required adapter behavior |
 | --- | --- |
-| `ICurrentUser` | Resolve trusted current identity or null for anonymous/expired identity; never cache across users. M4 supplies OIDC mapping. |
+| `ICurrentUser` | Resolve trusted current identity or null for anonymous/expired identity; never cache across users. M4 supplies OIDC mapping and checks active server sessions on every call. |
 | `IConversationRepository` | Owner-scoped find/list/save/delete. Save uses compare-and-swap against `expectedRevision`; 0 means insert, otherwise write exactly the next revision. Atomically store the turn, ordering, metadata, and authorized attachment references. Reject stale revisions without a partial write. Delete removes message references atomically; binary retention remains separate. |
 | `IConnectionProfileRepository` | Owner-scoped find/list/insert/update/delete; distinguish insert from update to prevent accidental recreation. Delete atomically clears matching preferences. No secrets in these records. |
 | `IUserPreferencesRepository` | Owned upsert with one snapshot per user; validate selected-profile ownership/existence in the same transaction to close races with profile deletion. |
@@ -83,6 +83,6 @@ Compose the three services manually or in the host's DI container with trusted i
 
 `ConversationView`, `MessageView`, `AttachmentView`, `ConnectionProfileView`, and `PreferencesView` carry no owner ID, secret, SDK type, or storage address. `MessageView` exposes sequence, timestamps, submission ID, lifecycle, partial content, and safe error category. `GenerationUpdate` defines the future incremental UI event (conversation/message ID, delta, state, optional error); no event source is connected yet. Consumers apply updates once in order and reload snapshots on reconnect. Attachment status describes preparation, not proof of sending to a compatible model.
 
-Conversation list pages avoid message bodies, but loading and updating a conversation currently materializes its complete history. This deliberately small initial aggregate is not an optimized solution for unbounded histories or token-by-token database writes. M5/M8 must validate transaction, history loading, checkpointing, and recovery behavior against real adapters. Model/user authentication, storage, chat UI, real streaming, uploads, and NuGet delivery remain in later milestones.
+Conversation list pages avoid message bodies, but loading and updating a conversation currently materializes its complete history. This deliberately small initial aggregate is not an optimized solution for unbounded histories or token-by-token database writes. M5/M8 must validate transaction, history loading, checkpointing, and recovery behavior against real adapters. Model authentication, storage, chat UI, real streaming, uploads, and NuGet delivery remain in later milestones. User authentication is implemented in M4.
 
 Run the solution checks in the [development guide](development.md). Tests cover ownership (including faulty read adapters), paging, settings validation/selection/deletion, cancellation, duplicate submissions, concurrent writes, immutable snapshots, restoration, attachment metadata invariants, and response lifecycle without external infrastructure. This does not prove database or provider compatibility.

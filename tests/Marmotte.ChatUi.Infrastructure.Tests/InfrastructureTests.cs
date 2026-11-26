@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Npgsql;
@@ -13,7 +14,7 @@ using Npgsql;
 namespace Marmotte.ChatUi.Infrastructure.Tests;
 
 /// <summary>Exercises the real AppHost on an isolated Docker volume, then restarts it to verify retained data and repeatable initialization.</summary>
-public sealed class InfrastructureTests
+public sealed partial class InfrastructureTests
 {
     /// <summary>Enables container checks explicitly; routine core/host tests require neither Docker nor external credentials.</summary>
     public static bool Enabled => Environment.GetEnvironmentVariable("MARMOTTE_RUN_INFRASTRUCTURE_TESTS") == "1";
@@ -57,11 +58,14 @@ public sealed class InfrastructureTests
             {
                 var options = new DistributedApplicationTestingBuilderOptions { EnableDashboard = true };
                 await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Marmotte_ChatUi_AppHost>(options, arguments, cancellationToken);
+                // Dashboard testing defaults are applied after arguments; preserve the already-randomized public OIDC origins.
+                builder.Configuration["DcpPublisher:RandomizePorts"] = "false";
                 await using var app = await builder.BuildAsync(cancellationToken);
                 await app.StartAsync(cancellationToken);
                 await app.ResourceNotifications.WaitForResourceHealthyAsync("web", cancellationToken);
 
                 using var web = app.CreateHttpClient("web", "http");
+                Assert.Equal(webPort, web.BaseAddress!.Port);
                 using var health = await web.GetAsync("/health", cancellationToken);
                 Assert.Equal(HttpStatusCode.OK, health.StatusCode);
 
@@ -82,6 +86,7 @@ public sealed class InfrastructureTests
                 Assert.Equal(0L, await ExecuteScalarAsync(identity, "SELECT count(*) FROM pg_extension WHERE extname = 'vector'", cancellationToken));
 
                 using var keycloak = app.CreateHttpClient("keycloak", "http");
+                Assert.Equal(keycloakPort, keycloak.BaseAddress!.Port);
                 using var discoveryResponse = await keycloak.GetAsync("/realms/marmotte/.well-known/openid-configuration", cancellationToken);
                 discoveryResponse.EnsureSuccessStatusCode();
                 using var discovery = JsonDocument.Parse(await discoveryResponse.Content.ReadAsStringAsync(cancellationToken));
@@ -96,6 +101,7 @@ public sealed class InfrastructureTests
                     using var createUser = await keycloak.PostAsJsonAsync("/admin/realms/marmotte/users",
                         new { username = "restart-probe", enabled = true }, cancellationToken);
                     Assert.Equal(HttpStatusCode.Created, createUser.StatusCode);
+                    await VerifyOidcAsync(keycloak, new Uri($"http://localhost:{webPort}"), password, cancellationToken);
                 }
                 else
                 {
@@ -124,6 +130,88 @@ public sealed class InfrastructureTests
             await RemoveTestVolumeAsync(volumeName);
         }
     }
+
+    /// <summary>Signs two independent browser sessions into real Keycloak and verifies protected routes, antiforgery, RP logout, and cookie revocation.</summary>
+    private static async Task VerifyOidcAsync(HttpClient admin, Uri webOrigin, string password, CancellationToken cancellationToken)
+    {
+        foreach (var username in new[] { "m4-alice", "m4-bob" })
+        {
+            using var created = await admin.PostAsJsonAsync("/admin/realms/marmotte/users", new
+            {
+                username,
+                firstName = username,
+                lastName = "Test",
+                email = $"{username}@example.test",
+                emailVerified = true,
+                enabled = true,
+                credentials = new[] { new { type = "password", value = password, temporary = false } }
+            }, cancellationToken);
+            Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        }
+
+        using var aliceHandler = new HttpClientHandler();
+        using var alice = new HttpClient(aliceHandler) { BaseAddress = webOrigin };
+        using var bobHandler = new HttpClientHandler();
+        using var bob = new HttpClient(bobHandler) { BaseAddress = webOrigin };
+        // Keycloak treats localhost as secure for browsers, but HttpClient rejects Secure cookies over HTTP.
+        // Its documented Safari compatibility path emits usable loopback HTTP cookies without changing realm security.
+        const string safari = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
+        alice.DefaultRequestHeaders.UserAgent.ParseAdd(safari);
+        bob.DefaultRequestHeaders.UserAgent.ParseAdd(safari);
+        await SignInAsync(alice, "m4-alice", password, cancellationToken);
+        await SignInAsync(bob, "m4-bob", password, cancellationToken);
+        var oldCookie = aliceHandler.CookieContainer.GetCookieHeader(webOrigin);
+        using var page = await alice.GetAsync("/workspace", cancellationToken);
+        var html = await page.Content.ReadAsStringAsync(cancellationToken);
+        var token = AntiforgeryInput().Match(html);
+        Assert.True(token.Success);
+        using var missingToken = await alice.PostAsync("/account/logout", null, cancellationToken);
+        Assert.Equal(HttpStatusCode.BadRequest, missingToken.StatusCode);
+        using var form = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token.Groups[1].Value)
+        });
+        using var logout = await alice.PostAsync("/account/logout", form, cancellationToken);
+        Assert.Equal(HttpStatusCode.OK, logout.StatusCode);
+        Assert.Equal("/", logout.RequestMessage?.RequestUri?.AbsolutePath);
+        using var loginAgain = await alice.GetAsync("/account/login", cancellationToken);
+        Assert.Contains("kc-form-login", await loginAgain.Content.ReadAsStringAsync(cancellationToken), StringComparison.Ordinal);
+        using var replayHandler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false };
+        using var replay = new HttpClient(replayHandler) { BaseAddress = webOrigin };
+        replay.DefaultRequestHeaders.Add("Cookie", oldCookie);
+        using var denied = await replay.GetAsync("/workspace", cancellationToken);
+        Assert.Equal(HttpStatusCode.Redirect, denied.StatusCode);
+        using var bobPage = await bob.GetAsync("/workspace", cancellationToken);
+        Assert.Equal(HttpStatusCode.OK, bobPage.StatusCode);
+        Assert.Contains("m4-bob", await bobPage.Content.ReadAsStringAsync(cancellationToken), StringComparison.Ordinal);
+    }
+
+    /// <summary>Submits Keycloak's real login form and follows the authorization-code callback using a private cookie jar.</summary>
+    private static async Task SignInAsync(HttpClient browser, string username, string password, CancellationToken cancellationToken)
+    {
+        using var login = await browser.GetAsync("/account/login", cancellationToken);
+        var html = await login.Content.ReadAsStringAsync(cancellationToken);
+        Assert.True(login.IsSuccessStatusCode, $"Login returned {login.StatusCode} at {login.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Path)}.");
+        Assert.NotEqual("/account/error", login.RequestMessage?.RequestUri?.AbsolutePath);
+        var action = LoginFormAction().Match(html);
+        Assert.True(action.Success, "Keycloak must present the login form.");
+        using var form = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["username"] = username,
+            ["password"] = password,
+            ["credentialId"] = string.Empty
+        });
+        using var signedIn = await browser.PostAsync(WebUtility.HtmlDecode(action.Groups[1].Value), form, cancellationToken);
+        Assert.Equal(HttpStatusCode.OK, signedIn.StatusCode);
+        Assert.Equal("/workspace", signedIn.RequestMessage?.RequestUri?.AbsolutePath);
+        Assert.Contains(username, await signedIn.Content.ReadAsStringAsync(cancellationToken), StringComparison.Ordinal);
+    }
+
+    [GeneratedRegex("<form\\b[^>]*\\baction=\"([^\"]+)\"")]
+    private static partial Regex LoginFormAction();
+
+    [GeneratedRegex("name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"")]
+    private static partial Regex AntiforgeryInput();
 
     /// <summary>Obtains a free loopback port; Aspire subsequently binds it for this test's public origins.</summary>
     private static int GetAvailablePort()

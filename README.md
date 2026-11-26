@@ -13,7 +13,7 @@ A .NET and Blazor chat application, with reusable components for embedding conve
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="The marmot mascot holding an Experimental Proof of Concept sign" width="320" />
 
-Milestones 1 through 3 are implemented: the .NET 10/Blazor foundations, the domain and authorized use cases, and local Aspire infrastructure with PostgreSQL/pgvector, persistent Keycloak initialization, health checks, and telemetry. Web still displays the foundation page; business persistence, OIDC sign-in, model adapters, and reusable chat components remain for later milestones. No NuGet package has been published.
+Milestones 1 through 4 are implemented: .NET 10/Blazor foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC sign-in/sign-out with Keycloak and user isolation. Web provides a public landing page and a protected workspace. Business persistence, model adapters, and reusable chat components remain for later milestones. No NuGet package has been published.
 
 ## Product direction
 
@@ -35,7 +35,7 @@ Milestones 1 through 3 are implemented: the .NET 10/Blazor foundations, the doma
 
 ## Build and run
 
-Install the .NET SDK selected by [global.json](global.json): `10.0.401` or a newer patch in the same `10.0.4xx` feature band. NuGet access is required for the first restore. The standalone host and routine tests need neither Docker nor model credentials. The complete M3 infrastructure requires a running Docker-compatible engine.
+Install the .NET SDK selected by [global.json](global.json): `10.0.401` or a newer patch in the same `10.0.4xx` feature band. NuGet access is required for the first restore. The standalone host and routine tests need neither Docker nor model credentials. The complete local infrastructure requires a running Docker-compatible engine.
 
 Run from the repository root:
 
@@ -49,12 +49,12 @@ dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 
 Open [the local host](http://localhost:5180). The page displays the project status and mascot; it does not yet provide chat. Stop it with Ctrl+C.
 
-To start the M3 infrastructure with Docker running:
+To start the infrastructure and OIDC sign-in with Docker running:
 
 ```sh
 dotnet run --project src/Marmotte.ChatUi.AppHost --configuration Release --no-build
 ```
 
-Aspire starts PostgreSQL, pgvector initialization, Keycloak, Web, and [pgAdmin in the browser](http://localhost:5050) with PostgreSQL preconfigured. Open its authenticated dashboard link; database and identity data survive Ctrl+C and restart. See [operations](docs/operations.md) for ports, secrets, and existing-volume behavior.
+Aspire starts PostgreSQL, pgvector initialization, Keycloak, Web, and [pgAdmin in the browser](http://localhost:5050) with PostgreSQL preconfigured. Open its authenticated dashboard link; database and identity data survive Ctrl+C and restart. See [operations](docs/operations.md) to create local users, sign in, and configure ports, secrets, and existing volumes.
 
 See the [development guide](docs/development.md) for pinned dependencies, conventions, and test coverage; [operations](docs/operations.md) for Aspire startup and development secrets; and [integration](docs/integration.md) for component boundaries and rendering decisions.

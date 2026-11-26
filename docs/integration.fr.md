@@ -2,15 +2,15 @@
 
 [English](integration.md) | Français
 
-## Ce qui existe dans M1–M3
+## Ce qui existe dans M1–M4
 
-`Marmotte.ChatUi.Components` est une Razor Class Library `net10.0` référençant `Marmotte.ChatUi.Contracts` et `Microsoft.AspNetCore.Components.Web`. Elle ne fournit pas encore de composants publics de chat. Contracts fournit désormais `IConversationService`, `IConnectionProfileService`, `IUserPreferencesService`, les DTO, les mises à jour de génération et les erreurs sûres ; consulter la [référence des API du cœur](core.fr.md). Les consommateurs fournissent ces services sans importer Application ni les adaptateurs serveur. Son graphe de packages est contrôlé pour rester indépendant des adaptateurs PostgreSQL, Keycloak, Aspire et OpenAI. Le projet web référence déjà la RCL, mais affiche actuellement sa propre page de présentation du socle. M3 ajoute l’infrastructure et ServiceDefaults uniquement à l’hôte de l’application complète ; les consommateurs de composants n’acquièrent aucune nouvelle dépendance serveur.
+`Marmotte.ChatUi.Components` est une Razor Class Library `net10.0` référençant `Marmotte.ChatUi.Contracts` et `Microsoft.AspNetCore.Components.Web`. Elle ne fournit pas encore de composants publics de chat. Contracts fournit désormais `IConversationService`, `IConnectionProfileService`, `IUserPreferencesService`, les DTO, les mises à jour de génération et les erreurs sûres ; consulter la [référence des API du cœur](core.fr.md). Les consommateurs fournissent ces services sans importer Application ni les adaptateurs serveur. Son graphe de packages est contrôlé pour rester indépendant des adaptateurs PostgreSQL, Keycloak, Aspire et OpenAI. Le projet web référence déjà la RCL, et affiche ses propres pages d’accueil et d’espace protégé. M3 ajoute l’infrastructure et ServiceDefaults, et M4 l’identité OIDC uniquement à l’hôte de l’application complète ; les consommateurs de composants n’acquièrent aucune nouvelle dépendance serveur.
 
 Il n’existe ni package NuGet publié ni commande d’installation prise en charge. Tous les projets sont actuellement non empaquetables ; l’identité du package, ses métadonnées, la distribution de Contracts et les tests de consommation externe relèvent de M10. M7 ajoutera les vrais exemples de composants, paramètres, callbacks, templates, états, consignes d’accessibilité et API de personnalisation des thèmes.
 
 ## Contrat de rendu
 
-L’application complète utilise Interactive Server avec prérendu. Elle enregistre `AddInteractiveServerComponents`, configure `AddInteractiveServerRenderMode` et définit `InteractiveServer` sur Routes et HeadOutlet. Le premier test de l’hôte vérifie le contenu prérendu et les marqueurs d’interactivité serveur ; il ne simule pas de circuit navigateur.
+L’application complète utilise Interactive Server avec prérendu pour les pages authentifiées. Elle enregistre `AddInteractiveServerComponents`, configure `AddInteractiveServerRenderMode` et sélectionne `InteractiveServer` sur Routes et HeadOutlet si authentifié. Les pages publiques d’accueil/erreur utilisent le SSR statique ; l’endpoint de circuit exige une session active. Les tests de l’hôte vérifient les deux modes, l’autorisation des routes et l’expiration/révocation avec le véritable adaptateur d’utilisateur courant. Ils ne simulent ni JavaScript navigateur ni circuit WebSocket actif.
 
 Les composants réutilisables doivent hériter du mode de leur hôte, sans `@rendermode` imposé, service injecté propre au serveur ou accès implicite à `HttpContext`, aux secrets et à la configuration globale de l’application. Consulter les [modes de rendu Blazor](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-10.0).
 

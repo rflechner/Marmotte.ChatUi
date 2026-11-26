@@ -1,6 +1,14 @@
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" />
+        <AuthorizeRouteView RouteData="routeData">
+            <NotAuthorized>
+                <main class="foundation">
+                    <h1>Sign-in required</h1>
+                    <p>Your session has ended or this page requires an active session.</p>
+                    <a href="/account/login" data-enhance-nav="false">Sign in</a>
+                </main>
+            </NotAuthorized>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>

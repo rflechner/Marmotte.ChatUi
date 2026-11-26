@@ -2,15 +2,15 @@
 
 English | [Français](integration.fr.md)
 
-## What exists in M1–M3
+## What exists in M1–M4
 
-`Marmotte.ChatUi.Components` is a `net10.0` Razor Class Library referencing `Marmotte.ChatUi.Contracts` and `Microsoft.AspNetCore.Components.Web`. It has no public chat components yet. Contracts now provides `IConversationService`, `IConnectionProfileService`, `IUserPreferencesService`, DTOs, generation updates, and safe errors; see the [core API reference](core.md). Consumers supply these services without importing Application or server adapters. Its package graph is checked for independence from PostgreSQL, Keycloak, Aspire, and OpenAI adapters. The web project already references the RCL, but currently renders its own foundation page. M3 adds infrastructure and ServiceDefaults only to the full application host; component consumers acquire no new server dependencies.
+`Marmotte.ChatUi.Components` is a `net10.0` Razor Class Library referencing `Marmotte.ChatUi.Contracts` and `Microsoft.AspNetCore.Components.Web`. It has no public chat components yet. Contracts now provides `IConversationService`, `IConnectionProfileService`, `IUserPreferencesService`, DTOs, generation updates, and safe errors; see the [core API reference](core.md). Consumers supply these services without importing Application or server adapters. Its package graph is checked for independence from PostgreSQL, Keycloak, Aspire, and OpenAI adapters. The web project already references the RCL, and renders its own landing and protected workspace pages. M3 adds infrastructure and ServiceDefaults, and M4 adds OIDC identity only to the full application host; component consumers acquire no new server dependencies.
 
 There is no published NuGet package or supported installation command. All projects are currently non-packable; package identity, metadata, delivery of Contracts, and external consumption checks belong to M10. M7 will add actual component examples, parameters, callbacks, templates, states, accessibility guidance, and theme customization APIs.
 
 ## Rendering contract
 
-The complete application uses Interactive Server with prerendering. It registers `AddInteractiveServerComponents`, maps `AddInteractiveServerRenderMode`, and sets `InteractiveServer` on Routes and HeadOutlet. The initial host test verifies prerendered content and server interactivity markers; it does not simulate a browser circuit.
+The complete application uses Interactive Server with prerendering for authenticated pages. It registers `AddInteractiveServerComponents`, maps `AddInteractiveServerRenderMode`, and selects `InteractiveServer` on Routes and HeadOutlet when authenticated. Public landing/error pages use static SSR; the circuit endpoint requires an active session. Host tests verify both modes, route authorization, and session expiry/revocation with the actual current-user adapter. They do not simulate browser JavaScript or an active WebSocket circuit.
 
 Reusable components must inherit their host's mode, avoiding a hardcoded `@rendermode`, server-only injected services, or implicit access to `HttpContext`, secrets, and global application configuration. See [Blazor render modes](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-10.0).
 

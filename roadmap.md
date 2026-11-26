@@ -8,7 +8,7 @@ This roadmap turns the [architecture decisions](ARCHITECTURE.md) into actionable
 
 ## Starting point
 
-M1 through M3 are complete: solution foundations, the domain and authorized use cases, and local Aspire infrastructure with persistent PostgreSQL/pgvector and Keycloak, health checks, diagnostics, tests, and CI configuration. Of the 82 tasks below, 20 are complete and 62 remain open. The chat UI, business persistence, OIDC sign-in, model integrations, and NuGet publication remain planned.
+M1 through M4 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC identity with server-side session and user isolation. Of the 82 tasks below, 26 are complete and 56 remain open. Chat UI, business persistence, model integrations, and NuGet publication remain planned.
 
 ## Scope and tracking
 
@@ -102,14 +102,16 @@ M1 through M3 are complete: solution foundations, the domain and authorized use 
 
 **Dependencies:** [M2](#milestone-2), [M3](#milestone-3).
 
-- [ ] **4.1** — Integrate OIDC sign-in and sign-out with Keycloak in the web host, including session expiry and authentication failure handling.
-- [ ] **4.2** — Implement the current-user adapter and map stable application identity to the OIDC issuer/subject pair rather than email.
-- [ ] **4.3** — Protect application routes and server entry points, while keeping Keycloak and authentication implementation details out of the reusable UI package.
-- [ ] **4.4** — Enforce ownership in application operations and data access; reject browser-supplied owner identities as a source of authorization.
-- [ ] **4.5** — Keep application authentication separate from model-server credentials and prevent profile secrets from being exposed to other users.
-- [ ] **4.6** — Verify anonymous access, expired sessions, sign-out, and cross-user access denial; document local identity configuration and its production limitations.
+- [x] **4.1** — Integrate OIDC sign-in and sign-out with Keycloak in the web host, including session expiry and authentication failure handling.
+- [x] **4.2** — Implement the current-user adapter and map stable application identity to the OIDC issuer/subject pair rather than email.
+- [x] **4.3** — Protect application routes and server entry points, while keeping Keycloak and authentication implementation details out of the reusable UI package.
+- [x] **4.4** — Enforce ownership in application operations and data access; reject browser-supplied owner identities as a source of authorization.
+- [x] **4.5** — Keep application authentication separate from model-server credentials and prevent profile secrets from being exposed to other users.
+- [x] **4.6** — Verify anonymous access, expired sessions, sign-out, and cross-user access denial; document local identity configuration and its production limitations.
 
 **Exit criterion:** Two users can sign in independently, and authorization tests reject access to another user's data through the application contracts. Enforcement against actual database records and stored attachments is verified again in M5 and M9.
+
+**Validation (2026-11-26):** On macOS ARM64 with SDK 10.0.401, locked restore, Release build (zero warnings/errors), formatting/analyzers, and all 78 routine tests pass. The Docker integration test also passes: real Keycloak forms authenticate two independent users, OIDC callbacks reach the protected workspace, antiforgery is enforced, RP-initiated logout clears Keycloak and local sessions, replayed cookies are rejected, and the other user stays signed in. The same test retains its three-start database/identity lifecycle checks. Routine tests exercise signed OIDC tokens, invalid issuer/audience/nonce/expiry, missing identity, protected routes/SignalR, fixed return destinations, expired/revoked circuit identities, remote failures, and cross-user conversation/profile/preference access with test repositories. English/French documents and local links were checked. Sessions are in-memory and single-process; Keycloak-initiated revocation is not implemented and real browser JavaScript/WebSocket behavior has not been exercised, as detailed in [operations](docs/operations.md) and [development](docs/development.md). Database/file enforcement remains M5/M9 work. No production deployment or GitHub Actions run is claimed.
 
 <a id="milestone-5"></a>
 

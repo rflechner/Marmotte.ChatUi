@@ -4,7 +4,7 @@
 
 ## Périmètre implémenté
 
-M3 fournit l’orchestration locale Aspire, PostgreSQL avec pgvector, un realm/client Keycloak persistant et les paramètres de santé/télémétrie de Web. Web affiche encore la page du socle. La connexion OIDC (M4), les repositories/migrations métier (M5), les appels de modèles (M6) et les uploads ne sont pas implémentés. Les paramètres d’authentification et de base injectés préparent ces adaptateurs ; ils ne les activent pas. Aucun déploiement de production n’est configuré.
+M3 fournit l’orchestration locale Aspire, PostgreSQL avec pgvector, un realm/client Keycloak persistant et les paramètres de santé/télémétrie de Web. M4 ajoute connexion/déconnexion OIDC, espace de travail protégé et contrôles serveur de session/propriété. Les repositories/migrations métier (M5), appels de modèles (M6) et uploads restent non implémentés. Aucun déploiement de production n’est configuré.
 
 ## Démarrage et arrêt locaux
 
@@ -32,7 +32,7 @@ Ressources attendues :
 | `keycloak` | Attend `keycloakdb`, importe le realm s’il est absent puis valide son contrôle de gestion `/health/ready` |
 | `web` | Attend la réussite de l’initialisation et la disponibilité de Keycloak, puis valide `/health` |
 
-[L’hôte web](http://localhost:5180) et [la console d’administration Keycloak](http://localhost:8180/admin/) sont accessibles au navigateur. Aucun bouton de connexion utilisateur n’existe encore dans Web. Ctrl+C dans le terminal AppHost arrête ses processus et conteneurs, en conservant le volume de base. Relancer la même commande pour reprendre. Ne pas démarrer deux AppHosts sur le même volume, ni l’hôte autonome et l’AppHost sur le même port web.
+[L’hôte web](http://localhost:5180) et [la console d’administration Keycloak](http://localhost:8180/admin/) sont accessibles au navigateur. Web fournit un lien de connexion et un `/workspace` protégé avec formulaire de déconnexion. Ctrl+C dans le terminal AppHost arrête ses processus et conteneurs, en conservant le volume de base. Relancer la même commande pour reprendre. Ne pas démarrer deux AppHosts sur le même volume, ni l’hôte autonome et l’AppHost sur le même port web.
 
 Pour travailler sur l’UI/le cœur sans Docker :
 
@@ -40,7 +40,7 @@ Pour travailler sur l’UI/le cœur sans Docker :
 dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 ```
 
-Cet hôte autonome n’a pas de connexion à une base ou à l’identité. `/health` et `/alive` renvoient `Healthy` en Development ; ces contrôles de processus ne revendiquent aucune dépendance externe.
+Sans paramètres d’authentification, l’hôte autonome affiche sa page publique et laisse les routes protégées inaccessibles. Une configuration OIDC partielle échoue au démarrage. `/health` et `/alive` renvoient `Healthy` en Development ; ces contrôles de processus ne revendiquent aucune dépendance externe.
 
 ## pgAdmin dans le navigateur
 
@@ -74,11 +74,34 @@ Un changement de version majeure PostgreSQL nécessite une stratégie de migrati
 
 [La source du realm](../src/Marmotte.ChatUi.AppHost/Realms/marmotte-realm.json) crée le realm `marmotte` et le client confidentiel `marmotte-web`. Des variables d’environnement fournissent le secret du client et l’origine visible au navigateur. Authorization Code avec PKCE S256 est activé ; les flux implicite, mot de passe direct, compte de service et l’inscription publique sont désactivés. Aucun utilisateur applicatif ni mot de passe utilisateur n’est préchargé.
 
-L’autorité par défaut est `http://localhost:8180/realms/marmotte`. Son document de découverte annonce cette adresse visible au navigateur. Les redirections sont limitées à `http://localhost:5180/signin-oidc` ; celles après déconnexion utilisent `http://localhost:5180/signout-callback-oidc`. Elles sont préparées pour M4 et ne sont pas encore traitées par Web. Le realm exige TLS pour les accès externes ; HTTP en boucle locale et `start-dev` de Keycloak sont réservés au développement local. L’AppHost désactive explicitement la terminaison HTTPS automatique de Keycloak afin que l’autorité reste identique avec ou sans certificat de développement. Cela utilise l’API expérimentale de certificats d’Aspire 13.6 avec une suppression d’avertissement ciblée ; le tableau de bord conserve HTTPS.
+L’autorité par défaut est `http://localhost:8180/realms/marmotte`. Son document de découverte annonce cette adresse visible au navigateur. Les redirections sont limitées à `http://localhost:5180/signin-oidc` ; celles après déconnexion utilisent `http://localhost:5180/signout-callback-oidc`. Le gestionnaire OIDC de Web traite les deux callbacks. Le realm exige TLS pour les accès externes ; HTTP en boucle locale et `start-dev` de Keycloak sont réservés au développement local. L’AppHost désactive explicitement la terminaison HTTPS automatique de Keycloak afin que l’autorité reste identique avec ou sans certificat de développement. Cela utilise l’API expérimentale de certificats d’Aspire 13.6 avec une suppression d’avertissement ciblée ; le tableau de bord conserve HTTPS.
 
 L’import au démarrage de Keycloak ignore un realm existant et préserve les utilisateurs et modifications des clients. Modifier le JSON, le port Web ou le secret configuré du client ne met **pas** à jour un realm existant. Actualiser les URL/le secret du client dans la console d’administration authentifiée (et les paramètres AppHost correspondants), ou créer explicitement un volume de développement distinct. Ne pas supprimer des données existantes pour appliquer un changement de configuration. Consulter le [comportement d’import Keycloak](https://www.keycloak.org/server/importExport#_importing_a_realm_during_startup).
 
 L’administrateur initial est `admin` ; son mot de passe généré est un paramètre secret du tableau de bord Aspire local. Y créer les utilisateurs de développement lorsque nécessaire. Les identifiants d’amorçage créent seulement l’administrateur initial ; les modifier ensuite ne réinitialise pas son mot de passe.
+
+## Connexion et sessions
+
+Dans la console d’administration Keycloak, sélectionner le realm `marmotte`, ouvrir **Users** et créer deux utilisateurs de développement activés avec noms d’utilisateur distincts, prénoms/noms et adresses e-mail. Définir les mots de passe dans **Credentials** ; les mots de passe temporaires exigent un changement à la première connexion. Aucun compte/mot de passe n’est versionné. Ouvrir Web, choisir **Sign in to your workspace**, puis saisir les identifiants utilisateur dans Keycloak. Utiliser des profils de navigateur distincts ou une fenêtre privée pour des utilisateurs indépendants. L’espace protégé affiche le nom connecté ; chat et persistance restent à venir.
+
+Aspire injecte les paramètres du client confidentiel. Web autonome accepte les mêmes clés ci-dessous (les variables d’environnement utilisent `__`). Conserver le secret du client dans les user secrets Web ou un coffre, séparément des identifiants des modèles. Les trois clés OIDC doivent être présentes ensemble. HTTPS est obligatoire sauf HTTP en boucle locale en Development. L’autorité ne peut contenir ni informations utilisateur, ni query string, ni fragment et doit correspondre exactement à l’émetteur. L’origine du callback doit correspondre à l’URL réelle du navigateur et à l’enregistrement Keycloak.
+
+| Clé Web | Défaut / comportement |
+| --- | --- |
+| `Authentication:Authority` | Aucun défaut ; Aspire fournit l’émetteur du realm visible au navigateur |
+| `Authentication:ClientId` | Aucun défaut ; Aspire fournit `marmotte-web` |
+| `Authentication:ClientSecret` | Requis avec OIDC ; secret serveur uniquement |
+| `Authentication:SessionMinutes` | `30` ; plage `1..480`, également bornée par l’expiration de l’ID token |
+
+L’hôte utilise Authorization Code/PKCE, callbacks en mode query et contrôles nonce/corrélation. Les appels réseau OIDC ont un délai maximal de 15 secondes et le parcours de connexion de cinq minutes. La connexion revient toujours à `/workspace` ; destinations de retour et propriétaires fournis par l’appelant sont ignorés. `/`, `/error`, `/account/error`, les ressources statiques et les endpoints de santé Development sont publics. Les routes applicatives de composants et SignalR exigent une session serveur active. Les échecs d’authentification affichent une page générique pour réessayer, sans détails du fournisseur.
+
+Le cookie HttpOnly, SameSite=Lax contient une référence aléatoire protégée vers un ticket. Les cookies Secure sont obligatoires hors Development ; le développement local utilise le schéma de la requête. Seul l’ID token nécessaire à la déconnexion Keycloak reste dans le ticket serveur en mémoire ; les access/refresh tokens sont abandonnés et les jetons d’identité n’entrent jamais dans les contrats de présentation. Les sessions expirent de façon absolue, sans renouvellement glissant ni refresh. L’expiration ou la déconnexion refuse immédiatement les opérations applicatives suivantes, y compris depuis un circuit déjà ouvert ; l’UI du circuit revalide l’état toutes les 30 secondes. Les opérations déjà autorisées et en cours ne sont pas automatiquement annulées.
+
+**Sign out** envoie un POST protégé par antiforgery. Web révoque d’abord le ticket local, puis redirige vers Keycloak et revient à `/`. Un échec distant termine quand même la session locale, mais la session SSO Keycloak peut rester active. La session indépendante d’un autre utilisateur reste active. Rejouer un cookie après déconnexion est refusé.
+
+Il s’agit d’un POC à processus unique : un redémarrage Web efface toutes les sessions. Plusieurs instances exigent un stockage partagé de tickets/révocations et des clés de protection des données partagées et protégées. La déconnexion initiée par Keycloak/back-channel, la propagation des révocations administrateur, les refresh tokens et l’annulation automatique des opérations en cours ne sont pas implémentés. Une révocation distante prend effet à la prochaine connexion ou à l’expiration locale. Avant production, définir ces politiques, les reverse proxies/en-têtes transférés de confiance, les origines HTTPS, la rotation des secrets, la protection des clés et les rôles de base à privilèges minimaux. Changer l’émetteur modifie les identifiants de propriété et exige une migration. L’autorisation en base et sur fichiers stockés exige encore les tests d’intégration M5/M9.
+
+Références : [OIDC ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-oidc-web-authentication?view=aspnetcore-10.0) et [état d’authentification Blazor](https://learn.microsoft.com/en-us/aspnet/core/blazor/security/authentication-state?view=aspnetcore-10.0).
 
 ## Configuration et secrets
 
@@ -116,7 +139,7 @@ L’AppHost injecte `ConnectionStrings__chatdb`, les endpoints de découverte de
 
 ServiceDefaults enregistre la découverte de services pour `HttpClient`, un délai HTTP par défaut de 30 secondes, des métriques du runtime/HTTP serveur/client et des traces, avec export OTLP optionnel lorsque `OTEL_EXPORTER_OTLP_ENDPOINT` est configuré par Aspire. Aucun retry automatique n’est ajouté ; l’adaptateur de génération définira ses propres délais/annulation. La capture des corps/en-têtes personnalisés, l’instrumentation SQL, l’enregistrement des exceptions dans les traces HTTP et l’export des journaux OpenTelemetry ne sont pas activés. L’instrumentation HTTP conserve le masquage par défaut des valeurs de requête ; ne pas le désactiver ni placer des secrets/contenus dans les chemins d’URL. Les journaux applicatifs doivent toujours exclure conversations, contenus de fichiers, données base64 et identifiants d’accès.
 
-En Development, `/alive` exécute uniquement les contrôles marqués `live` ; `/health` exécute tous les contrôles enregistrés et renvoie 503 en cas d’échec. Les réponses ne contiennent que l’état, sans détails de diagnostic. Les appels de ces endpoints sont exclus des traces HTTP. Web ne contrôle actuellement que lui-même : les conditions de démarrage Aspire vérifient les dépendances, tandis que leurs contrôles continus côté repositories/OIDC relèveront des futurs adaptateurs. Aucun de ces endpoints n’est publié en Production. `Logging:LogLevel` contrôle les diagnostics console ; aucune journalisation des corps de requête n’est configurée. Considérer l’accès au tableau de bord comme privilégié, car il permet d’accéder à la configuration et aux secrets des ressources.
+En Development, `/alive` exécute uniquement les contrôles marqués `live` ; `/health` exécute tous les contrôles enregistrés et renvoie 503 en cas d’échec. Les réponses ne contiennent que l’état, sans détails de diagnostic. Les appels de ces endpoints sont exclus des traces HTTP. Web ne contrôle actuellement que lui-même : les conditions de démarrage Aspire vérifient les dépendances, tandis que les contrôles continus de dépendances repositories/OIDC restent non implémentés. Aucun de ces endpoints n’est publié en Production. `Logging:LogLevel` contrôle les diagnostics console ; aucune journalisation des corps de requête n’est configurée. Considérer l’accès au tableau de bord comme privilégié, car il permet d’accéder à la configuration et aux secrets des ressources.
 
 ## Topologie réseau des serveurs de modèles
 
@@ -124,7 +147,7 @@ Web est un processus de l’hôte ; une future URL de modèle utilisant `localho
 
 ## Vérification et diagnostic
 
-Le [test d’infrastructure](../tests/Marmotte.ChatUi.Infrastructure.Tests/InfrastructureTests.cs), activé explicitement, démarre le véritable AppHost avec des secrets aléatoires, des ports distincts et un volume temporaire unique. Il contrôle la disponibilité, l’interface web pgAdmin, les bases séparées, vector, la découverte visible au navigateur, le client confidentiel/PKCE/les redirections et la conservation des données applicatives/d’identité. Les redémarrages couvrent une extension déjà activée et sa réparation après suppression. Il libère les ressources et supprime seulement son propre volume, y compris après un échec. Les tests courants l’ignorent ; la CI possède un job Docker séparé. Consulter le [développement](development.fr.md) pour la commande.
+Le [test d’infrastructure](../tests/Marmotte.ChatUi.Infrastructure.Tests/InfrastructureTests.cs), activé explicitement, démarre le véritable AppHost avec des secrets aléatoires, des ports distincts et un volume temporaire unique. Il contrôle la disponibilité, l’interface web pgAdmin, les bases séparées, vector, la découverte visible au navigateur, le client confidentiel/PKCE/les redirections et la conservation des données applicatives/d’identité. Il connecte aussi deux utilisateurs temporaires via les vrais formulaires Keycloak avec des cookies indépendants, suit les callbacks, contrôle l’antiforgery, déconnecte via Keycloak, refuse un cookie révoqué et préserve l’autre session. Les ports publics du test sont choisis une fois et conservés pour rendre les origines OIDC annoncées joignables. Les redémarrages couvrent une extension déjà activée et sa réparation après suppression. Il libère les ressources et supprime seulement son propre volume, y compris après un échec. Les tests courants l’ignorent ; la CI possède un job Docker séparé. Consulter le [développement](development.fr.md) pour la commande.
 
 - Échec SDK/restauration : contrôler `dotnet --info`, l’accès NuGet et les fichiers de verrouillage. Ne pas désactiver l’audit ou le mode verrouillé pour masquer un échec.
 - Docker indisponible : démarrer le moteur et vérifier que `docker version` affiche client et serveur. Les téléchargements d’images nécessitent l’accès à Docker Hub/Quay. Attendre les premiers téléchargements et l’initialisation de Keycloak.
@@ -133,4 +156,6 @@ Le [test d’infrastructure](../tests/Marmotte.ChatUi.Infrastructure.Tests/Infra
 - Redirection ou issuer Keycloak incohérent : utiliser `localhost` systématiquement et inspecter la découverte/les URL du client. Les realms existants ne sont pas réimportés ; actualiser explicitement le client après un changement de port.
 - Données apparemment absentes : vérifier le moteur/contexte Docker et le volume choisi. Ne pas supprimer de volume ni régénérer de secrets avant d’avoir retrouvé les données d’origine.
 - Interruption des tests : un processus tué brutalement peut laisser un volume `marmotte-infrastructure-test-*`. Inspecter son nom exact et vérifier qu’aucun conteneur ne l’utilise avant de supprimer ce volume de test ; ne jamais purger tous les volumes.
-- Paramètres de modèle/identité/repository inactifs dans Web : ces adaptateurs relèvent des milestones suivants, pas des fonctions d’exécution de M3.
+- Connexion indisponible : vérifier les trois paramètres `Authentication`, la découverte joignable depuis Web, les secrets du client sur un realm existant et l’origine de redirection enregistrée. La page d’erreur omet les diagnostics du fournisseur.
+- Connexions répétées : l’ID token peut expirer avant le plafond de session ; se reconnecter. Un redémarrage Web termine aussi toutes les sessions.
+- Paramètres de modèle/repository inactifs dans Web : ces adaptateurs restent pour les milestones suivants.

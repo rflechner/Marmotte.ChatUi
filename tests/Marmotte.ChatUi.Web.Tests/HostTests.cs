@@ -11,7 +11,7 @@ namespace Marmotte.ChatUi.Web.Tests;
 public sealed class HostTests
 {
     [Fact]
-    public async Task Home_prerenders_without_external_services_and_enables_server_interactivity()
+    public async Task Public_home_renders_without_external_services_or_an_anonymous_circuit()
     {
         await using var factory = CreateFactory();
         using var client = factory.CreateClient();
@@ -21,7 +21,7 @@ public sealed class HostTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("Marmotte.ChatUi", html, StringComparison.Ordinal);
         Assert.Contains("not production-ready", html, StringComparison.Ordinal);
-        Assert.Contains("\"type\":\"server\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"type\":\"server\"", html, StringComparison.Ordinal);
         Assert.Matches("_framework/blazor\\.web(?:\\.[a-z0-9]+)?\\.js", html);
     }
 

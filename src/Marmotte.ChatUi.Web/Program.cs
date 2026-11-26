@@ -1,11 +1,13 @@
 using Marmotte.ChatUi.ServiceDefaults;
 using Marmotte.ChatUi.Web.Components;
+using Marmotte.ChatUi.Web.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.AddHostIdentity();
 
 var app = builder.Build();
 
@@ -16,11 +18,15 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
+app.MapAccountEndpoints();
 app.MapDefaultEndpoints();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .RequireAuthorization();
 
 app.Run();
 
