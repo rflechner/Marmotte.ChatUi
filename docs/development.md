@@ -21,6 +21,7 @@ The solution uses .NET 10 LTS, C# 14, and `net10.0` throughout. [global.json](..
 | Microsoft.AspNetCore.DataProtection.Abstractions | 10.0.12 | Host-provided credential protection |
 | OpenAI | 2.15.0 | Isolated Chat Completions/Models adapter; narrow experimental custom-auth constructor |
 | xunit.v3 | 4.0.3 | Tests using Microsoft.Testing.Platform |
+| bunit | 2.15.2 | Interactive and static component contract tests, test-only dependency |
 
 Direct package versions live in [Directory.Packages.props](../Directory.Packages.props). The Aspire SDK version lives in `global.json`; update the SDK and hosting package together. Transitive versions and content hashes are recorded in committed lock files. [NuGet.Config](../NuGet.Config) selects only nuget.org, avoiding accidental dependencies on a developer's private feeds.
 
@@ -43,9 +44,27 @@ The `--solution` option is required by the selected Microsoft.Testing.Platform m
 
 [CI](../.github/workflows/ci.yml) runs the same commands on Ubuntu and has a separate Docker infrastructure job. Configuring the workflow does not establish that GitHub Actions has already run it.
 
-The architecture and host tests enforce allowed project references, core independence, component dependency isolation, public static rendering, authenticated Interactive Server markers, static assets, and HTTP 404 behavior. Host tests use ephemeral data protection. Health/readiness/liveness, Production health endpoint exclusion, and the absence of an OTLP log provider are covered. M4 uses the actual OIDC/cookie handlers with RSA-signed local test tokens to check PKCE, issuer/audience/nonce/lifetime validation, missing identity, anonymous entry points, antiforgery, cookie replay, failed remote logout, expiry, and cross-user use cases with the actual current-user adapter. Test repository code is shared with Core.Tests through a linked source file; these routine tests keep their test repositories; opt-in M5 tests use the host-composed PostgreSQL repositories. The EF model/snapshot check also runs without a database; see the [migration workflow](persistence.md#ef-migration-workflow). Routine tests need no personal server, paid key, or Docker; opt-in database tests require Docker. Browser JavaScript/WebSocket behavior and external NuGet consumption remain future checks. M6 adds controlled SDK contract tests and an opt-in model-server suite; see [model verification](models.md).
+The architecture and host tests enforce allowed project references, core independence, component dependency isolation, public static rendering, authenticated Interactive Server markers, static assets, and HTTP 404 behavior. Host tests use ephemeral data protection. Health/readiness/liveness, Production health endpoint exclusion, and the absence of an OTLP log provider are covered. M4 uses the actual OIDC/cookie handlers with RSA-signed local test tokens to check PKCE, issuer/audience/nonce/lifetime validation, missing identity, anonymous entry points, antiforgery, cookie replay, failed remote logout, expiry, and cross-user use cases with the actual current-user adapter. Test repository code is shared with Core.Tests through a linked source file; these routine tests keep their test repositories; opt-in M5 tests use the host-composed PostgreSQL repositories. The EF model/snapshot check also runs without a database; see the [migration workflow](persistence.md#ef-migration-workflow). Routine tests need no personal server, paid key, or Docker; opt-in database tests require Docker. M7 verifies browser JavaScript/WebSocket behavior in the independent component sample; authenticated browser circuits and external NuGet consumption remain separate future checks. M6 adds controlled SDK contract tests and an opt-in model-server suite; see [model verification](models.md).
 
 M2 adds `Marmotte.ChatUi.Core.Tests`: immutable domain snapshots, history restoration, lifecycle/partial responses, duplicate submissions, optimistic concurrency, user isolation, bounded paging, settings validation, and cancellation. Its test-only repositories require no infrastructure. See the [core reference](core.md) for adapter guarantees and limitations.
+
+## Component and browser checks
+
+M7 adds `Marmotte.ChatUi.Components.Tests` (bUnit): safe content, awaited acceptance/cancellation, duplicate guards, draft retention, attachment blocking, templates, themes, and static rendering. The independent sample is built with the solution; architecture tests require that it references only Components and has no server-adapter packages. The RCL stylesheet is exercised through the Web host too.
+
+Browser checks require Node.js 20 or newer (CI uses 22), npm, and Playwright's Chromium. From the repository root after the .NET build:
+
+```sh
+cd tests/browser
+npm ci
+npx playwright install chromium
+npm test
+cd ../..
+```
+
+Playwright starts/stops the sample on `http://127.0.0.1:5190` in Development. It may reuse an existing local sample outside CI. Close an old sample before checking a rebuild. Linux CI installs browser system libraries with `npx playwright install --with-deps chromium`. The lock file pins Playwright 1.62.1 and axe 4.14.1; no Node dependency enters a shipped .NET project. To use installed Chrome instead, set `MARMOTTE_BROWSER_CHANNEL=chrome` for `npm test` (POSIX shell).
+
+The suite covers the actual Interactive Server connection, keyboard newline/Tab/submit/focus, empty/sending/streaming/completed/cancelled/failed states, retained drafts and partial text, attachment removal/blocking, OS color-scheme changes, independent/inherited overrides, and 360px/1280px layouts in light/dark/system modes. Axe checks WCAG 2 A/AA, 2.1 AA and 2.2 AA rules, including default text contrast; screenshots and failure traces go under ignored `tests/browser/test-results/`. Inspect screenshots alongside automated checks. This does not certify accessibility, replace testing with assistive technologies, or verify Firefox/Safari, WebAssembly/Auto, authenticated Web circuits, or NuGet packaging. Theme overrides need their own contrast checks.
 
 ## Docker infrastructure checks
 

@@ -107,3 +107,10 @@ Test observable behavior and important edge cases. Avoid tests that merely mirro
 For documentation-only changes, review the content, verify local links and language pairs, and inspect the diff. For code changes, run the relevant available checks and report any that could not be performed.
 
 Do not claim a build, compatibility check, NuGet publication, or deployment that has not happened. Describe what changed, why, what was verified, and any remaining limitations.
+
+## Disclose AI assistance in commits
+
+- Every commit created or materially assisted by an AI agent must identify that agent in the commit message for transparency. This applies to ChatGPT Codex, Mistral, Claude, and other AI assistants.
+- Preserve the human author's configured Git identity. Add attribution trailers after a blank line at the end of the commit message; do not impersonate the human or replace their Git configuration.
+- For ChatGPT Codex, use `Co-authored-by: ChatGPT Codex <noreply@openai.com>`.
+- For Mistral, Claude, or another assistant, use a `Co-authored-by: Name <email>` trailer when an attribution identity has been supplied or configured. Otherwise, use an explicit `AI-Assisted-By: Mistral` or `AI-Assisted-By: Claude` trailer instead of inventing an email address.

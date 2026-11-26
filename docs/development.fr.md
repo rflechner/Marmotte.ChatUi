@@ -20,6 +20,7 @@ La solution utilise .NET 10 LTS, C# 14 et `net10.0` dans toute la solution. [glo
 | Npgsql / Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.0 | Pilote PostgreSQL et fournisseur EF dans l’adaptateur de persistance |
 | Microsoft.AspNetCore.DataProtection.Abstractions | 10.0.12 | Protection des secrets fournie par l’hôte |
 | OpenAI | 2.15.0 | Adaptateur Chat Completions/Models isolé ; constructeur expérimental d’authentification limité |
+| bunit | 2.15.2 | Contrats des composants interactifs et statiques, dépendance réservée aux tests |
 | xunit.v3 | 4.0.3 | Tests avec Microsoft.Testing.Platform |
 
 Les versions directes des packages figurent dans [Directory.Packages.props](../Directory.Packages.props). La version du SDK Aspire figure dans `global.json` ; mettre à jour le SDK et le package d’hébergement ensemble. Les versions transitives et empreintes sont enregistrées dans les fichiers de verrouillage versionnés. [NuGet.Config](../NuGet.Config) sélectionne uniquement nuget.org, pour éviter une dépendance accidentelle aux flux privés d’un développeur.
@@ -43,9 +44,27 @@ L’option `--solution` est nécessaire avec le mode Microsoft.Testing.Platform 
 
 La [CI](../.github/workflows/ci.yml) exécute les mêmes commandes sur Ubuntu et possède un job d’infrastructure Docker distinct. Configurer le workflow ne signifie pas qu’il a déjà été exécuté sur GitHub Actions.
 
-Les tests d’architecture et d’hébergement contrôlent les références autorisées, l’indépendance du cœur, l’isolation des composants, le rendu public statique, les marqueurs Interactive Server authentifiés, les ressources statiques et les réponses HTTP 404. Les tests de l’hôte utilisent une protection des données éphémère. Santé/disponibilité/vivacité, exclusion des endpoints de santé en Production et absence de fournisseur de journaux OTLP sont couvertes. M4 utilise les vrais gestionnaires OIDC/cookies avec des jetons locaux signés RSA pour contrôler PKCE, émetteur/audience/nonce/validité, identité absente, accès anonymes, antiforgery, rejeu de cookie, échec de déconnexion distante, expiration et cas d’usage entre utilisateurs avec le véritable adaptateur d’identité. Le code des repositories de test est partagé avec Core.Tests par fichier source lié ; ces tests courants gardent leurs repositories de test ; les tests M5 optionnels utilisent les repositories PostgreSQL composés par l’hôte. Le contrôle du modèle/instantané EF fonctionne aussi sans base ; voir la [procédure de migrations](persistence.fr.md#procédure-de-migrations-ef). Les tests courants ne nécessitent aucun serveur personnel, clé payante ou Docker ; les tests de base optionnels exigent Docker. JavaScript/WebSocket navigateur et consommation NuGet externe restent à vérifier. M6 ajoute des tests contrôlés du SDK et une suite serveur optionnelle ; voir [vérification des modèles](models.fr.md).
+Les tests d’architecture et d’hébergement contrôlent les références autorisées, l’indépendance du cœur, l’isolation des composants, le rendu public statique, les marqueurs Interactive Server authentifiés, les ressources statiques et les réponses HTTP 404. Les tests de l’hôte utilisent une protection des données éphémère. Santé/disponibilité/vivacité, exclusion des endpoints de santé en Production et absence de fournisseur de journaux OTLP sont couvertes. M4 utilise les vrais gestionnaires OIDC/cookies avec des jetons locaux signés RSA pour contrôler PKCE, émetteur/audience/nonce/validité, identité absente, accès anonymes, antiforgery, rejeu de cookie, échec de déconnexion distante, expiration et cas d’usage entre utilisateurs avec le véritable adaptateur d’identité. Le code des repositories de test est partagé avec Core.Tests par fichier source lié ; ces tests courants gardent leurs repositories de test ; les tests M5 optionnels utilisent les repositories PostgreSQL composés par l’hôte. Le contrôle du modèle/instantané EF fonctionne aussi sans base ; voir la [procédure de migrations](persistence.fr.md#procédure-de-migrations-ef). Les tests courants ne nécessitent aucun serveur personnel, clé payante ou Docker ; les tests de base optionnels exigent Docker. M7 vérifie JavaScript/WebSocket navigateur dans l’exemple indépendant de composants ; les circuits navigateur authentifiés et la consommation NuGet externe restent des vérifications distinctes à venir. M6 ajoute des tests contrôlés du SDK et une suite serveur optionnelle ; voir [vérification des modèles](models.fr.md).
 
 M2 ajoute `Marmotte.ChatUi.Core.Tests` : instantanés métier immuables, restauration d’historique, cycle de vie/réponses partielles, doublons, concurrence optimiste, isolation utilisateur, pagination bornée, validation des paramètres et annulation. Ses repositories de test ne nécessitent aucune infrastructure. Consulter la [référence du cœur](core.fr.md) pour les garanties des adaptateurs et les limites.
+
+## Vérifications des composants et du navigateur
+
+M7 ajoute `Marmotte.ChatUi.Components.Tests` (bUnit) : contenu sûr, acceptation/annulation attendues, gardes contre les doublons, brouillon conservé, pièces jointes bloquées, templates, thèmes et rendu statique. L’exemple indépendant est compilé avec la solution ; les tests d’architecture imposent qu’il référence uniquement Components, sans packages d’adaptateurs serveur. La feuille de style RCL est aussi vérifiée via l’hôte Web.
+
+Les contrôles navigateur nécessitent Node.js 20 ou ultérieur (22 en CI), npm et le Chromium de Playwright. Depuis la racine, après compilation .NET :
+
+```sh
+cd tests/browser
+npm ci
+npx playwright install chromium
+npm test
+cd ../..
+```
+
+Playwright démarre/arrête l’exemple sur `http://127.0.0.1:5190` en Development. Hors CI, il peut réutiliser un exemple local existant. Fermer un ancien exemple avant de vérifier une recompilation. La CI Linux installe les bibliothèques système via `npx playwright install --with-deps chromium`. Le verrou fixe Playwright 1.62.1 et axe 4.14.1 ; aucune dépendance Node n’entre dans un projet .NET livré. Pour employer Chrome déjà installé, définir `MARMOTTE_BROWSER_CHANNEL=chrome` pour `npm test` (shell POSIX).
+
+La suite couvre la connexion Interactive Server réelle, retour à la ligne/Tab/envoi/focus au clavier, états vide/envoi/streaming/terminé/annulé/échoué, brouillons et texte partiel conservés, suppression/blocage des pièces jointes, changements de thème système, surcharges indépendantes/héritées et formats 360px/1280px en clair/sombre/système. Axe vérifie les règles WCAG 2 A/AA, 2.1 AA et 2.2 AA, dont le contraste du texte par défaut ; captures et traces d’échec vont dans `tests/browser/test-results/`, ignoré par Git. Examiner les captures en complément des contrôles. Cela ne certifie pas l’accessibilité, ne remplace pas les essais avec technologies d’assistance et ne valide ni Firefox/Safari, WebAssembly/Auto, circuits authentifiés Web ou empaquetage NuGet. Les surcharges de thème nécessitent leurs propres contrôles de contraste.
 
 ## Vérifications de l’infrastructure Docker
 

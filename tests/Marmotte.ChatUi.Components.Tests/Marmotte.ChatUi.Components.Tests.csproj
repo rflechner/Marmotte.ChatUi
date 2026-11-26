@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="bunit" />
+    <ProjectReference Include="../../src/Marmotte.ChatUi.Components/Marmotte.ChatUi.Components.csproj" />
+  </ItemGroup>
+</Project>

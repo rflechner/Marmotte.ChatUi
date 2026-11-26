@@ -1,0 +1,27 @@
+<div class="mcui-transcript" role="region" aria-label="@Label" tabindex="0">
+    @if (Messages.Count == 0)
+    {
+        <div class="mcui-empty">
+            @if (EmptyContent is not null)
+            {
+                @EmptyContent
+            }
+            else
+            {
+                <h3>What would you like to explore?</h3>
+                <p>Write a message to start a conversation.</p>
+            }
+        </div>
+    }
+    else
+    {
+        <ol class="mcui-messages">
+            @foreach (var message in Messages)
+            {
+                <li @key="message.Id">
+                    <ChatMessage Message="message" ContentTemplate="MessageTemplate" AttachmentTemplate="AttachmentTemplate" />
+                </li>
+            }
+        </ol>
+    }
+</div>

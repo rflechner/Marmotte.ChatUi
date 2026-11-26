@@ -8,7 +8,7 @@ Cette feuille de route décline les décisions de [l’architecture](ARCHITECTUR
 
 ## Point de départ
 
-M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire, identité OIDC avec sessions serveur et isolation utilisateur, et persistance PostgreSQL avec secrets protégés. L’adaptateur texte M6 est implémenté et vérifié avec LM Studio. Sur les 82 tâches ci-dessous, 41 sont terminées et 41 restent ouvertes. L’UI de chat et la publication NuGet restent prévues ; la matrice de compatibilité des modèles restante est suivie en 6.8.
+M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autorisés, infrastructure locale Aspire, identité OIDC avec sessions serveur et isolation utilisateur, et persistance PostgreSQL avec secrets protégés. L’adaptateur texte M6 est implémenté et vérifié avec LM Studio. M7 livre l’UI réutilisable, les thèmes et l’exemple indépendant. Sur les 82 tâches ci-dessous, 49 sont terminées et 33 restent ouvertes. L’orchestration complète du chat et la publication NuGet restent prévues ; la matrice de compatibilité des modèles restante est suivie en 6.8.
 
 ## Périmètre et suivi
 
@@ -163,16 +163,18 @@ M1 à M5 sont terminés : socle de la solution, domaine et cas d’usage autoris
 
 **Dépendances:** [M1](#milestone-1), [M2](#milestone-2).
 
-- [ ] **7.1** — Définir les tokens CSS sémantiques des surfaces, textes, accents, bordures, focus, états, espacements, typographie, rayons et ombres.
-- [ ] **7.2** — Implémenter les thèmes clair, sombre et système, avec choix explicite de l’utilisateur et substitutions des tokens à l’échelle de l’application ou d’un widget.
-- [ ] **7.3** — Construire les composants réutilisables de liste de messages, message, saisie, état de génération et aperçu de pièces jointes à partir des contrats de présentation.
-- [ ] **7.4** — Composer un widget de chat intégrable avec paramètres, callbacks et templates documentés ; éviter les dépendances à une configuration globale ou à un circuit serveur.
-- [ ] **7.5** — Gérer les états vide, envoi, réception progressive, annulation et erreur, et afficher de manière sûre le contenu fourni par le modèle.
-- [ ] **7.6** — Intégrer la mascotte existante à l’identité visuelle de l’hôte tout en permettant aux consommateurs de remplacer ou d’omettre la marque.
-- [ ] **7.7** — Vérifier l’adaptation aux tailles d’écran, la navigation clavier, le focus, les libellés, les contrastes et les annonces accessibles des états dans chaque thème.
-- [ ] **7.8** — Ajouter un exemple minimal et documenter dans les deux langues l’intégration, les API publiques, les assets et la personnalisation des tokens.
+- [x] **7.1** — Définir les tokens CSS sémantiques des surfaces, textes, accents, bordures, focus, états, espacements, typographie, rayons et ombres.
+- [x] **7.2** — Implémenter les thèmes clair, sombre et système, avec choix explicite de l’utilisateur et substitutions des tokens à l’échelle de l’application ou d’un widget.
+- [x] **7.3** — Construire les composants réutilisables de liste de messages, message, saisie, état de génération et aperçu de pièces jointes à partir des contrats de présentation.
+- [x] **7.4** — Composer un widget de chat intégrable avec paramètres, callbacks et templates documentés ; éviter les dépendances à une configuration globale ou à un circuit serveur.
+- [x] **7.5** — Gérer les états vide, envoi, réception progressive, annulation et erreur, et afficher de manière sûre le contenu fourni par le modèle.
+- [x] **7.6** — Intégrer la mascotte existante à l’identité visuelle de l’hôte tout en permettant aux consommateurs de remplacer ou d’omettre la marque.
+- [x] **7.7** — Vérifier l’adaptation aux tailles d’écran, la navigation clavier, le focus, les libellés, les contrastes et les annonces accessibles des états dans chaque thème.
+- [x] **7.8** — Ajouter un exemple minimal et documenter dans les deux langues l’intégration, les API publiques, les assets et la personnalisation des tokens.
 
 **Critère de validation:** Une application d’exemple affiche les composants de chat avec des services et tokens de thème substitués, sans Keycloak, PostgreSQL, Aspire ni SDK OpenAI.
+
+**Validation M7 (2026-11-26) :** Sur macOS ARM64 avec SDK 10.0.401, restauration verrouillée, compilation Release (zéro avertissement/erreur), formatage/analyseurs et 162 tests .NET courants passent, dont 20 tests de composants. Quatorze tests Docker/modèle optionnels n’ont pas été relancés. Onze tests Playwright passent sous Chromium 151.0.7922.34 : véritable Interactive Server, clavier/focus, contenu encodé, envoi/streaming/fin, réponses partielles arrêtées ou échouées, brouillons conservés, blocage/suppression des pièces jointes, changements de thème/système, surcharges applicatives/par instance et formats 360px/1280px. Axe ne détecte aucune violation sur les règles WCAG et écrans testés ; les captures claire sur ordinateur et sombre sur mobile ont été examinées, et livraison/provenance de la mascotte sont contrôlées. L’exemple démarre indépendamment avec réponses substituées, sans adaptateurs serveur. API publique, ressources, tokens par défaut, propriété des cycles de vie et limites sont documentés dans [l’intégration](docs/integration.fr.md) ; les deux langues et les liens locaux ont été contrôlés. La CI inclut les tests navigateur, sans exécution GitHub Actions annoncée. Usage avec lecteur d’écran, autres moteurs de navigateur, WebAssembly/Auto, orchestration complète modèle/historique, transmission des pièces jointes et publication NuGet restent hors de cette validation.
 
 <a id="milestone-8"></a>
 

@@ -1,0 +1,38 @@
+<ChatTheme Theme="Theme" Class="@Class" Style="@Style">
+    <section class="mcui-widget" aria-label="@Title">
+        <header class="mcui-widget-header">
+            <div class="mcui-brand">@Branding <h2>@Title</h2></div>
+            @if (ShowThemeSelector)
+            {
+                <label class="mcui-theme-picker">
+                    Theme
+                    <select value="@Theme" @onchange="ChangeThemeAsync" disabled="@(!RendererInfo.IsInteractive || !ThemeChanged.HasDelegate)">
+                        <option value="System">System</option>
+                        <option value="Light">Light</option>
+                        <option value="Dark">Dark</option>
+                    </select>
+                </label>
+            }
+        </header>
+        <MessageList Messages="Messages" Label="@($"{Title} messages")" EmptyContent="EmptyContent"
+                     MessageTemplate="MessageTemplate" AttachmentTemplate="AttachmentTemplate" />
+        <div class="mcui-generation">
+            <GenerationIndicator Status="Status" Sending="Sending" Cancelling="@(Cancelling || _cancelling)" Error="@(Error ?? _cancelError)" />
+            <button class="mcui-button mcui-secondary" type="button" @onclick="CancelAsync"
+                    disabled="@(!RendererInfo.IsInteractive || !Active || Sending || Cancelling || _cancelling || !OnCancel.HasDelegate)">Stop response</button>
+        </div>
+        @if (Attachments.Count > 0)
+        {
+            <div class="mcui-attachments" role="group" aria-label="Pending attachments">
+                @foreach (var attachment in Attachments)
+                {
+                    <AttachmentPreview @key="attachment.Id" Attachment="attachment" PreviewTemplate="AttachmentTemplate"
+                                       OnRemove="OnRemoveAttachment" Disabled="Busy" />
+                }
+            </div>
+        }
+        <MessageComposer Draft="@Draft" DraftChanged="DraftChanged" OnSend="OnSend" Busy="Busy"
+                         BlockedReason="@(Attachments.Count > 0 ? "This text composer cannot send attachments. Remove them before sending." : null)" />
+        @Footer
+    </section>
+</ChatTheme>

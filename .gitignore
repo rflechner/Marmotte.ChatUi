@@ -424,3 +424,7 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# Browser verification output
+tests/browser/test-results/
+tests/browser/playwright-report/

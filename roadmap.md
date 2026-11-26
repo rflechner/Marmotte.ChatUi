@@ -8,7 +8,7 @@ This roadmap turns the [architecture decisions](ARCHITECTURE.md) into actionable
 
 ## Starting point
 
-M1 through M5 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, OIDC identity with server-side session and user isolation, and PostgreSQL persistence with protected credentials. The M6 text adapter is implemented and verified with LM Studio. Of the 82 tasks below, 41 are complete and 41 remain open. Chat UI and NuGet publication remain planned; the remaining model compatibility matrix is tracked in 6.8.
+M1 through M5 are complete: solution foundations, the domain and authorized use cases, local Aspire infrastructure, OIDC identity with server-side session and user isolation, and PostgreSQL persistence with protected credentials. The M6 text adapter is implemented and verified with LM Studio. M7 delivers the reusable UI, themes and independent sample. Of the 82 tasks below, 49 are complete and 33 remain open. Full chat orchestration and NuGet publication remain planned; the remaining model compatibility matrix is tracked in 6.8.
 
 ## Scope and tracking
 
@@ -163,16 +163,18 @@ M1 through M5 are complete: solution foundations, the domain and authorized use 
 
 **Dependencies:** [M1](#milestone-1), [M2](#milestone-2).
 
-- [ ] **7.1** — Define semantic CSS tokens for surfaces, text, accents, borders, focus, states, spacing, typography, radii, and shadows.
-- [ ] **7.2** — Implement light, dark, and system themes, including explicit user selection and token overrides at application and widget scope.
-- [ ] **7.3** — Build reusable message-list, message, composer, generation-status, and attachment-preview components using presentation contracts.
-- [ ] **7.4** — Compose an embeddable chat widget with documented parameters, callbacks, and templates; avoid global configuration and server-circuit assumptions.
-- [ ] **7.5** — Handle empty, sending, streaming, cancellation, and error states, and render model-provided content safely.
-- [ ] **7.6** — Integrate the existing mascot into the host's visual identity while allowing consumers to replace or omit branding.
-- [ ] **7.7** — Verify responsive behavior, keyboard navigation, focus, labels, contrast, and accessible status announcements in each theme.
-- [ ] **7.8** — Add a minimal component sample and document integration, public APIs, assets, and token customization in both languages.
+- [x] **7.1** — Define semantic CSS tokens for surfaces, text, accents, borders, focus, states, spacing, typography, radii, and shadows.
+- [x] **7.2** — Implement light, dark, and system themes, including explicit user selection and token overrides at application and widget scope.
+- [x] **7.3** — Build reusable message-list, message, composer, generation-status, and attachment-preview components using presentation contracts.
+- [x] **7.4** — Compose an embeddable chat widget with documented parameters, callbacks, and templates; avoid global configuration and server-circuit assumptions.
+- [x] **7.5** — Handle empty, sending, streaming, cancellation, and error states, and render model-provided content safely.
+- [x] **7.6** — Integrate the existing mascot into the host's visual identity while allowing consumers to replace or omit branding.
+- [x] **7.7** — Verify responsive behavior, keyboard navigation, focus, labels, contrast, and accessible status announcements in each theme.
+- [x] **7.8** — Add a minimal component sample and document integration, public APIs, assets, and token customization in both languages.
 
 **Exit criterion:** A sample host renders the chat components with substituted services and theme tokens, without Keycloak, PostgreSQL, Aspire, or the OpenAI SDK.
+
+**M7 validation (2026-11-26):** On macOS ARM64 with SDK 10.0.401, locked restore, Release build (zero warnings/errors), formatting/analyzers, and 162 routine .NET tests pass, including 20 component tests. Fourteen opt-in Docker/model tests were not rerun. Eleven Playwright tests pass against Chromium 151.0.7922.34: actual Interactive Server, keyboard/focus, encoded content, sending/streaming/completion, stopped and failed partial responses, draft retention, attachment blocking/removal, theme/OS changes, application and instance overrides, and 360px/1280px layouts. Axe reports no violations for the tested WCAG rule sets/screens; light desktop and dark mobile screenshots were inspected, and mascot delivery/provenance is checked. The sample starts independently with substituted responses and no server adapters. The public API, assets, token defaults, lifecycle ownership and limits are documented in [integration](docs/integration.md); both language versions and local links were checked. CI includes browser checks but no GitHub Actions run is claimed. Screen-reader usability, other browser engines, WebAssembly/Auto, full model/history orchestration, attachment transmission, and NuGet publication remain outside this validation.
 
 <a id="milestone-8"></a>
 

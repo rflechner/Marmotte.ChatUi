@@ -1,0 +1,30 @@
+body {
+    margin: 0;
+    background: #f3f4ef;
+    color: #233b34;
+    font-family: system-ui, sans-serif;
+    line-height: 1.6;
+}
+.sample-shell { max-width: 1200px; margin: auto; padding: 2rem; }
+.sample-intro { max-width: 800px; margin-bottom: 2.5rem; }
+.sample-wordmark { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; }
+.sample-wordmark span { margin-left: auto; font-size: 0.65rem; letter-spacing: 0.14em; }
+.sample-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; margin-top: 2rem; }
+.sample-intro h1 { font-family: Georgia, serif; font-weight: 400; font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 1.15; margin: 1rem 0; }
+.sample-notice, .sample-footer { color: #4b6157; font-size: 0.8rem; }
+.sample-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+.sample-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin-bottom: 1rem; }
+.sample-controls label { display: grid; gap: 0.25rem; font-size: 0.85rem; }
+.sample-controls select, .sample-controls button, .sample-attachment-actions button { font: inherit; color: inherit; background: #fff; border: 1px solid #81958f; border-radius: 0.5rem; min-height: 44px; padding: 0.5rem 0.75rem; }
+.sample-controls button:disabled, .sample-attachment-actions button:disabled { opacity: 0.6; }
+.sample-controls :focus-visible, .sample-attachment-actions :focus-visible { outline: 3px solid #7952ba; outline-offset: 3px; }
+.sample-aside > .sample-eyebrow { margin-top: 0; }
+.sample-note { padding: 0.5rem 1rem; font-size: 0.9rem; }
+.sample-note h2 { font-family: Georgia, serif; font-weight: 400; font-size: 1.5rem; }
+.sample-inspector { margin-top: 3rem; border-top: 1px solid #81958f; padding-top: 1rem; }
+.sample-inspector h2 { font-family: Georgia, serif; font-weight: 400; font-size: 2rem; margin: 0; }
+.sample-attachment-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+.sample-inspector .mcui-theme { background: var(--mcui-surface, var(--_mcui-surface)); padding: 1rem; border-radius: 1rem; }
+.sample-footer { margin: 2rem 0 0; }
+@media (max-width: 800px) { .sample-grid { grid-template-columns: minmax(0, 1fr); } .sample-shell { padding: 1rem; } }
+@media (max-width: 400px) { .sample-wordmark { flex-wrap: wrap; } .sample-wordmark span { margin-left: 0; } }

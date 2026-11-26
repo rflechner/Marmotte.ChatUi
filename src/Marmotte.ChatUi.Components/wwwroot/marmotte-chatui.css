@@ -1,0 +1,312 @@
+/* Public --mcui-* overrides are inherited. Private palette defaults reset at each theme boundary. */
+.mcui-theme {
+    --_mcui-surface: #ffffff;
+    --_mcui-surface-muted: #f1f5f4;
+    --_mcui-surface-user: #e1f2ef;
+    --_mcui-text: #1b3432;
+    --_mcui-text-muted: #526561;
+    --_mcui-accent: #126b60;
+    --_mcui-accent-hover: #0b5148;
+    --_mcui-on-accent: #ffffff;
+    --_mcui-border: #81958f;
+    --_mcui-focus: #7952ba;
+    --_mcui-error: #a32735;
+    --_mcui-success: #256548;
+    --_mcui-shadow: 0 12px 36px #163c3212;
+    color-scheme: light;
+    color: var(--mcui-text, var(--_mcui-text));
+    font-family: var(--mcui-font-family, system-ui, sans-serif);
+    font-size: var(--mcui-font-size, 1rem);
+    line-height: var(--mcui-line-height, 1.6);
+    min-width: 0;
+    text-align: start;
+}
+
+.mcui-theme[data-theme="dark"] {
+    --_mcui-surface: #172725;
+    --_mcui-surface-muted: #203633;
+    --_mcui-surface-user: #26443e;
+    --_mcui-text: #f0f6f3;
+    --_mcui-text-muted: #b4c7bf;
+    --_mcui-accent: #7cd9c2;
+    --_mcui-accent-hover: #a2ead8;
+    --_mcui-on-accent: #132c25;
+    --_mcui-border: #78998d;
+    --_mcui-focus: #d4b7ff;
+    --_mcui-error: #ffadb7;
+    --_mcui-success: #96ddb1;
+    --_mcui-shadow: 0 12px 36px #00000030;
+    color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    .mcui-theme[data-theme="system"] {
+        --_mcui-surface: #172725;
+        --_mcui-surface-muted: #203633;
+        --_mcui-surface-user: #26443e;
+        --_mcui-text: #f0f6f3;
+        --_mcui-text-muted: #b4c7bf;
+        --_mcui-accent: #7cd9c2;
+        --_mcui-accent-hover: #a2ead8;
+        --_mcui-on-accent: #132c25;
+        --_mcui-border: #78998d;
+        --_mcui-focus: #d4b7ff;
+        --_mcui-error: #ffadb7;
+        --_mcui-success: #96ddb1;
+        --_mcui-shadow: 0 12px 36px #00000030;
+        color-scheme: dark;
+    }
+}
+
+.mcui-theme .mcui-widget {
+    background: var(--mcui-surface, var(--_mcui-surface));
+    border: 1px solid var(--mcui-border, var(--_mcui-border));
+    border-radius: var(--mcui-radius-lg, 1.25rem);
+    box-shadow: var(--mcui-shadow, var(--_mcui-shadow));
+    overflow: hidden;
+    min-width: 0;
+}
+
+.mcui-theme .mcui-widget-header,
+.mcui-theme .mcui-generation,
+.mcui-theme .mcui-composer-actions,
+.mcui-theme .mcui-message-header,
+.mcui-theme .mcui-attachment {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--mcui-space-3, 0.75rem);
+    flex-wrap: wrap;
+}
+
+.mcui-theme .mcui-widget-header {
+    padding: var(--mcui-space-5, 1.5rem);
+    border-bottom: 1px solid var(--mcui-border, var(--_mcui-border));
+}
+
+.mcui-theme .mcui-brand {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: var(--mcui-space-3, 0.75rem);
+}
+
+.mcui-theme .mcui-brand h2 {
+    font-size: var(--mcui-font-heading, 1.25rem);
+    font-weight: var(--mcui-font-weight-strong, 650);
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.mcui-theme .mcui-theme-picker {
+    display: flex;
+    align-items: center;
+    gap: var(--mcui-space-2, 0.5rem);
+    font-size: var(--mcui-font-small, 0.875rem);
+}
+
+.mcui-theme .mcui-theme-picker select,
+.mcui-theme .mcui-composer textarea {
+    box-sizing: border-box;
+    max-width: 100%;
+    font: inherit;
+    color: var(--mcui-text, var(--_mcui-text));
+    background: var(--mcui-surface, var(--_mcui-surface));
+    border: 1px solid var(--mcui-border, var(--_mcui-border));
+    border-radius: var(--mcui-radius-sm, 0.5rem);
+    padding: var(--mcui-space-2, 0.5rem) var(--mcui-space-3, 0.75rem);
+    min-height: var(--mcui-control-height, 2.75rem);
+}
+
+.mcui-theme .mcui-transcript {
+    min-height: var(--mcui-transcript-min-height, 18rem);
+    max-height: var(--mcui-transcript-max-height, 32rem);
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    padding: var(--mcui-space-5, 1.5rem);
+    scrollbar-gutter: stable;
+}
+
+.mcui-theme .mcui-messages {
+    display: grid;
+    gap: var(--mcui-space-4, 1rem);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mcui-theme .mcui-message {
+    background: var(--mcui-surface-muted, var(--_mcui-surface-muted));
+    padding: var(--mcui-space-4, 1rem);
+    border-radius: var(--mcui-radius-md, 0.875rem);
+}
+
+.mcui-theme .mcui-message[data-role="user"] {
+    background: var(--mcui-surface-user, var(--_mcui-surface-user));
+    margin-inline-start: var(--mcui-space-6, 2rem);
+}
+
+.mcui-theme .mcui-message-header {
+    margin-bottom: var(--mcui-space-2, 0.5rem);
+    font-size: var(--mcui-font-small, 0.875rem);
+}
+
+.mcui-theme .mcui-message-content {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.mcui-theme .mcui-message time,
+.mcui-theme .mcui-message-note,
+.mcui-theme .mcui-empty p,
+.mcui-theme .mcui-composer-actions p,
+.mcui-theme .mcui-attachment-details span,
+.mcui-theme .mcui-status {
+    color: var(--mcui-text-muted, var(--_mcui-text-muted));
+    font-size: var(--mcui-font-small, 0.875rem);
+}
+
+.mcui-theme .mcui-empty {
+    padding: var(--mcui-space-6, 2rem) 0;
+    text-align: center;
+}
+
+.mcui-theme .mcui-empty h3 {
+    font-size: var(--mcui-font-heading, 1.25rem);
+    font-weight: var(--mcui-font-weight-strong, 650);
+}
+
+.mcui-theme .mcui-generation {
+    padding: var(--mcui-space-3, 0.75rem) var(--mcui-space-5, 1.5rem);
+    border-top: 1px solid var(--mcui-border, var(--_mcui-border));
+}
+
+.mcui-theme .mcui-status p {
+    margin: 0;
+}
+
+.mcui-theme .mcui-status[data-state="completed"] > [role="status"] {
+    color: var(--mcui-success, var(--_mcui-success));
+}
+
+.mcui-theme .mcui-composer {
+    padding: var(--mcui-space-4, 1rem) var(--mcui-space-5, 1.5rem) var(--mcui-space-5, 1.5rem);
+}
+
+.mcui-theme .mcui-composer label {
+    display: block;
+    font-weight: var(--mcui-font-weight-strong, 650);
+    margin-bottom: var(--mcui-space-2, 0.5rem);
+}
+
+.mcui-theme .mcui-composer textarea {
+    display: block;
+    width: 100%;
+    resize: vertical;
+    min-height: 6rem;
+}
+
+.mcui-theme .mcui-composer textarea::placeholder {
+    color: var(--mcui-text-muted, var(--_mcui-text-muted));
+    opacity: 1;
+}
+
+.mcui-theme .mcui-composer-actions {
+    margin-top: var(--mcui-space-3, 0.75rem);
+}
+
+.mcui-theme .mcui-composer-actions p {
+    flex: 1 1 12rem;
+    margin: 0;
+}
+
+.mcui-theme .mcui-button {
+    font: inherit;
+    font-size: var(--mcui-font-small, 0.875rem);
+    font-weight: var(--mcui-font-weight-strong, 650);
+    min-height: var(--mcui-control-height, 2.75rem);
+    padding: var(--mcui-space-2, 0.5rem) var(--mcui-space-4, 1rem);
+    border: 1px solid var(--mcui-accent, var(--_mcui-accent));
+    border-radius: var(--mcui-radius-sm, 0.5rem);
+    background: var(--mcui-accent, var(--_mcui-accent));
+    color: var(--mcui-on-accent, var(--_mcui-on-accent));
+    cursor: pointer;
+}
+
+.mcui-theme .mcui-button:hover:not(:disabled) {
+    background: var(--mcui-accent-hover, var(--_mcui-accent-hover));
+    border-color: var(--mcui-accent-hover, var(--_mcui-accent-hover));
+    color: var(--mcui-on-accent, var(--_mcui-on-accent));
+}
+
+.mcui-theme .mcui-secondary {
+    background: var(--mcui-surface, var(--_mcui-surface));
+    color: var(--mcui-accent, var(--_mcui-accent));
+}
+
+.mcui-theme .mcui-button:disabled,
+.mcui-theme .mcui-theme-picker select:disabled {
+    cursor: not-allowed;
+    opacity: var(--mcui-disabled-opacity, 0.6);
+}
+
+.mcui-theme .mcui-composer textarea:read-only {
+    background: var(--mcui-surface-muted, var(--_mcui-surface-muted));
+}
+
+.mcui-theme :where(button, textarea, select, a, [tabindex]):focus-visible {
+    outline: var(--mcui-focus-width, 3px) solid var(--mcui-focus, var(--_mcui-focus));
+    outline-offset: var(--mcui-focus-offset, 3px);
+}
+
+.mcui-theme .mcui-error {
+    color: var(--mcui-error, var(--_mcui-error));
+    overflow-wrap: anywhere;
+}
+
+.mcui-theme .mcui-error:empty {
+    display: none;
+}
+
+.mcui-theme .mcui-attachments {
+    padding: 0 var(--mcui-space-5, 1.5rem);
+}
+
+.mcui-theme .mcui-attachment {
+    border: 1px solid var(--mcui-border, var(--_mcui-border));
+    border-radius: var(--mcui-radius-sm, 0.5rem);
+    padding: var(--mcui-space-3, 0.75rem);
+    margin-block: var(--mcui-space-2, 0.5rem);
+    overflow-wrap: anywhere;
+}
+
+.mcui-theme .mcui-attachment-details {
+    display: grid;
+    gap: var(--mcui-space-1, 0.25rem);
+    min-width: 0;
+    flex: 1 1 10rem;
+}
+
+.mcui-theme .mcui-attachment[data-state="failed"] {
+    border-color: var(--mcui-error, var(--_mcui-error));
+}
+
+@media (max-width: 30rem) {
+    .mcui-theme .mcui-widget-header,
+    .mcui-theme .mcui-transcript,
+    .mcui-theme .mcui-generation,
+    .mcui-theme .mcui-composer {
+        padding: var(--mcui-space-3, 0.75rem);
+    }
+
+    .mcui-theme .mcui-message[data-role="user"] {
+        margin-inline-start: 0;
+    }
+}
+
+@media (forced-colors: active) {
+    .mcui-theme .mcui-button:disabled {
+        color: GrayText;
+        opacity: 1;
+    }
+}

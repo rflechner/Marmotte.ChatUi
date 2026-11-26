@@ -4,7 +4,7 @@ English | [Français](ARCHITECTURE.fr.md)
 
 ## Status and purpose
 
-This document distinguishes the implemented M1–M5 foundations from the target product architecture. The nine source projects, Interactive Server Blazor host, domain and authorized use cases, local Aspire infrastructure, and OIDC identity adapter now exist. PostgreSQL/pgvector and Keycloak start with persistent data and readiness checks; ServiceDefaults supplies diagnostics. Web authenticates users and protects its workspace and circuit endpoint. M5 composes the business use cases with PostgreSQL repositories when a database is configured, including migrations and protected model credentials. M6 adds the text model adapter, verified against LM Studio; Unsloth and vision validation remain open. Reusable chat components and NuGet publication remain planned.
+This document distinguishes the implemented M1–M5 foundations from the target product architecture. The nine source projects, Interactive Server Blazor host, domain and authorized use cases, local Aspire infrastructure, and OIDC identity adapter now exist. PostgreSQL/pgvector and Keycloak start with persistent data and readiness checks; ServiceDefaults supplies diagnostics. Web authenticates users and protects its workspace and circuit endpoint. M5 composes the business use cases with PostgreSQL repositories when a database is configured, including migrations and protected model credentials. M6 adds the text model adapter, verified against LM Studio; Unsloth and vision validation remain open. M7 implements reusable themed chat components and an independent sample; full chat orchestration and NuGet publication remain M8/M10 work.
 
 Marmotte.ChatUi serves two purposes: a .NET and Blazor chat application inspired by AnythingLLM and Open WebUI, and a library of components and widgets that can be embedded in other applications. The complete application will use the same components distributed through NuGet.
 
@@ -35,7 +35,7 @@ Important boundaries correspond to separate assemblies. The initial design is a 
 
 ### Target structure
 
-All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, and Application implement M2. Persistence.PostgreSql implements M5 and Infrastructure.OpenAI implements the M6 text adapter. Components still establishes the boundary for its future implementation. AppHost and ServiceDefaults implement M3 orchestration and diagnostics. Web references ServiceDefaults in addition to the dependencies listed below.
+All nine projects below exist under `src/`. The table describes their intended responsibilities. Domain, Contracts, and Application implement M2. Persistence.PostgreSql implements M5 and Infrastructure.OpenAI implements the M6 text adapter. Components implements the M7 presentation surface and semantic design system. AppHost and ServiceDefaults implement M3 orchestration and diagnostics. Web references ServiceDefaults in addition to the dependencies listed below.
 
 | Project / assembly | Responsibility | Main internal dependencies |
 | --- | --- | --- |
@@ -79,11 +79,9 @@ See the [core reference](docs/core.md) for invariants, transitions, public APIs,
 
 ## Blazor components and NuGet distribution
 
-The library is a Razor Class Library intended for publication on NuGet. Its M1 scaffold references only Contracts and the browser-compatible Blazor component packages. A message list, message composer, attachments, generation states, and a composable chat widget are planned for M7. See [integration](docs/integration.md) for the rendering contract and current limitations.
+The library is a Razor Class Library intended for publication on NuGet. M7 implements `ChatWidget`, `ChatTheme`, `MessageList`, `ChatMessage`, `MessageComposer`, `GenerationIndicator`, and `AttachmentPreview`, referencing only Contracts and browser-compatible Blazor packages. The host supplies snapshots, awaited callbacks and trusted templates; components inject no application services. Model text is encoded plain text, partial responses remain visible, and pending attachments block the text-only composer. See [integration](docs/integration.md) for the full public API, theme tokens, ownership/cancellation contract and limitations.
 
-Its API relies on stable parameters, events, templates, and presentation contracts. The consuming application supplies the conversation and attachment services it needs. The components do not require the complete application and do not mandate a database, identity provider, or model SDK.
-
-Reusable assets and styles must ship with the library where needed. The widget host can replace the Marmotte.ChatUi application's branding. A sample project or consumption test will verify that the package works without transitive dependencies on server adapters.
+The independent `samples/Marmotte.ChatUi.Sample` substitutes a deterministic response service and demonstrates Interactive Server, errors, cancellation, and scoped theme overrides without server adapters. Web uses the same widget in its protected workspace, with sending disabled pending M8 orchestration. CSS ships under the RCL's `_content` path; selectors are scoped to `.mcui-theme`. Public token overrides inherit without being reset by the light/dark/system palette. Branding is optional and supplied by the host; the sample includes an unchanged copy of the preserved mascot. Component and browser tests exercise the presentation contract, while architecture tests check sample independence. External NuGet consumption remains M10 work.
 
 NuGet publication is a later delivery milestone. No reserved package name, published version, or publication pipeline is assumed to exist.
 
@@ -165,11 +163,11 @@ The PDF rendering library, its license, and storage for rendered pages will be s
 
 ## Design system and visual identity
 
-The design system exposes semantic tokens through CSS custom properties: surfaces, text, accents, borders, states, focus, spacing, typography, radii, and shadows. Components use these tokens instead of individually hardcoded colors.
+The M7 design system exposes semantic tokens through `--mcui-*` CSS custom properties: surfaces, text, accents, borders, states, focus, spacing, typography, radii, and shadows. Components use these tokens instead of individually hardcoded colors.
 
-Provide light, dark, and system themes, with an explicit user preference. The consuming application must be able to override tokens globally or within a widget container, without modifying the package or imposing intrusive global styles. Check contrast, keyboard interaction, focus, and readability in every theme.
+`ChatTheme` and `ChatWidget` implement light, dark, and system palettes with explicit selection callbacks. Public token overrides inherit from the application or a widget container without changing the package or styling unrelated controls. The host owns preference persistence. Browser checks cover default contrast, keyboard interaction, focus, and responsive layouts; consumers must recheck their overrides.
 
-The brand reuses the turquoise mascot with a cream muzzle and red scarf supplied by the user. A Marmotte.ChatUi banner is used in the README, and a compact version is intended for the application. Widget consumers can customize its branding. MarmotteDB and Experimental Proof of Concept belong to the original references and are not the product name.
+The brand reuses the turquoise mascot with a cream muzzle and red scarf supplied by the user. A Marmotte.ChatUi banner is used in the README, and the preserved compact version is used in the application and sample. Widget consumers can customize its branding. MarmotteDB and Experimental Proof of Concept belong to the original references and are not the product name.
 
 Reference images and their provenance are preserved in [docs/images/README.md](docs/images/README.md). Assets must work on light and dark backgrounds and preserve transparency where present.
 

@@ -106,6 +106,36 @@ public sealed class DependencyTests
     }
 
     [Fact]
+    public void Component_sample_only_consumes_the_Razor_library_and_browser_packages()
+    {
+        var directory = Path.Combine(RepositoryRoot, "samples", "Marmotte.ChatUi.Sample");
+        var project = XDocument.Load(Path.Combine(directory, "Marmotte.ChatUi.Sample.csproj"));
+        var reference = Assert.Single(project.Descendants("ProjectReference"));
+        Assert.Equal(GetProjectPath("Components"), Path.GetFullPath(reference.Attribute("Include")!.Value, directory));
+        Assert.Empty(project.Descendants("PackageReference"));
+
+        using var packages = JsonDocument.Parse(File.ReadAllText(Path.Combine(directory, "packages.lock.json")));
+        string[] forbidden = ["OpenAI", "Npgsql", "EntityFrameworkCore", "Aspire", "OpenIdConnect", "Keycloak", "Marmotte.ChatUi.Application", "Marmotte.ChatUi.Domain"];
+        foreach (var framework in packages.RootElement.GetProperty("dependencies").EnumerateObject())
+        {
+            foreach (var dependency in framework.Value.EnumerateObject())
+            {
+                Assert.DoesNotContain(forbidden, name => dependency.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("src/Marmotte.ChatUi.Web")]
+    [InlineData("samples/Marmotte.ChatUi.Sample")]
+    public void Host_mascots_preserve_the_original_asset(string host)
+    {
+        var original = File.ReadAllBytes(Path.Combine(RepositoryRoot, "docs/images/marmotte-chatui-mascot.png"));
+        var deployed = File.ReadAllBytes(Path.Combine(RepositoryRoot, host, "wwwroot/images/marmotte-chatui-mascot.png"));
+        Assert.Equal(original, deployed);
+    }
+
+    [Fact]
     public void Only_the_model_adapter_directly_references_the_OpenAI_package()
     {
         foreach (var projectName in AllowedReferences.Keys)

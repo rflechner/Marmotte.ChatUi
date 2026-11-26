@@ -1,0 +1,70 @@
+@page "/"
+@implements IAsyncDisposable
+@inject SampleResponder Responder
+
+<PageTitle>Component studio — Marmotte.ChatUi</PageTitle>
+
+<main class="sample-shell">
+    <header class="sample-intro">
+        <div class="sample-wordmark"><img src="images/marmotte-chatui-mascot.png" alt="" width="56" height="56" /> Marmotte.ChatUi <span>COMPONENT STUDIO</span></div>
+        <p class="sample-eyebrow">A CONVERSATION, IN YOUR APPLICATION</p>
+        <h1>Make room for a good idea.</h1>
+        <p>Reusable Blazor components. Your services, your colors, your conversation.</p>
+        <p class="sample-notice">Experimental POC · Simulated responses · Nothing is saved or sent to a model.</p>
+    </header>
+
+    <div class="sample-grid">
+        <section aria-label="Interactive component example">
+            <div class="sample-controls">
+                <label>Response scenario
+                    <select @bind="_scenario" disabled="@IsBusy">
+                        <option value="complete">Complete response</option>
+                        <option value="partial-error">Fail during response</option>
+                        <option value="send-error">Reject submission</option>
+                    </select>
+                </label>
+                <button type="button" @onclick="Reset" disabled="@IsBusy">Clear conversation</button>
+            </div>
+            <ChatWidget Title="Your thinking space" Messages="_messages" @bind-Draft="_draft" @bind-Theme="_theme"
+                        Status="_status" Error="_error" Sending="_sending" Cancelling="_cancelling"
+                        OnSend="SendAsync" OnCancel="CancelAsync" Attachments="_attachments" OnRemoveAttachment="RemoveAttachment">
+                <Branding><img src="images/marmotte-chatui-mascot.png" alt="" width="44" height="44" /></Branding>
+                <EmptyContent>
+                    <img src="images/marmotte-chatui-mascot.png" alt="Turquoise marmot with a cream muzzle and red scarf" width="112" height="112" />
+                    <h3>A small start. A new possibility.</h3>
+                    <p>Send a message to try streaming and cancellation.</p>
+                </EmptyContent>
+            </ChatWidget>
+        </section>
+        <aside class="sample-aside">
+            <p class="sample-eyebrow">SAME COMPONENT. YOUR IDENTITY.</p>
+            <ChatWidget Title="Field notes" Theme="ThemePreference.Light" ShowThemeSelector="false" Class="sample-custom"
+                        Style="--mcui-accent: #6440a0; --mcui-accent-hover: #4e2d83; --mcui-on-accent: #ffffff; --mcui-radius-lg: 0.5rem; --mcui-transcript-min-height: 8rem; --mcui-space-5: 1rem;">
+                <EmptyContent><h3>Bring your own context.</h3><p>A separate palette, custom empty state, and no product branding.</p></EmptyContent>
+            </ChatWidget>
+            <div class="sample-note">
+                <h2>Designed to fit.</h2>
+                <p>Each widget owns its theme boundary. Application tokens can be inherited, or changed for a single conversation.</p>
+                <p>This second widget is display-only. Connect callbacks to enable its controls.</p>
+            </div>
+        </aside>
+    </div>
+
+    <section class="sample-inspector" aria-labelledby="attachment-heading">
+        <div><p class="sample-eyebrow">EXPLICIT STATES</p><h2 id="attachment-heading">Attachments, without assumptions.</h2>
+            <p>Metadata previews only. Preparation does not prove model support. Add one to see sending blocked.</p></div>
+        <div class="sample-attachment-actions">
+            @foreach (var state in Enum.GetValues<AttachmentStatus>())
+            {
+                <button type="button" disabled="@IsBusy" @onclick="() => AddAttachment(state)">Add @state.ToString().ToLowerInvariant()</button>
+            }
+        </div>
+        <ChatTheme Theme="_theme">
+            @foreach (var attachment in PreviewAttachments)
+            {
+                <AttachmentPreview Attachment="attachment" />
+            }
+        </ChatTheme>
+    </section>
+    <footer class="sample-footer">Marmotte.ChatUi · Milestone 7 · No database, identity provider, orchestration, or model SDK.</footer>
+</main>

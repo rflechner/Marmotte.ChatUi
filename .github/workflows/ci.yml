@@ -32,6 +32,18 @@ jobs:
         run: dotnet format Marmotte.ChatUi.slnx --verify-no-changes --no-restore
       - name: Test
         run: dotnet test --solution Marmotte.ChatUi.slnx --configuration Release --no-build --no-restore
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/browser/package-lock.json
+      - name: Restore browser checks
+        run: npm ci --prefix tests/browser
+      - name: Install Chromium
+        working-directory: tests/browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify component sample and accessibility
+        run: npm test --prefix tests/browser
 
   infrastructure:
     runs-on: ubuntu-latest

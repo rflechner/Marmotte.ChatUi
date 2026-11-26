@@ -107,3 +107,10 @@ Tester les comportements observables et les cas limites importants. Éviter les 
 Pour les changements purement documentaires, relire le contenu, vérifier les liens locaux et les paires linguistiques, puis inspecter le diff suffit. Pour le code, exécuter les vérifications pertinentes disponibles et signaler les vérifications impossibles.
 
 Ne pas annoncer de compilation, de compatibilité, de publication NuGet ou de déploiement qui n’a pas été effectué. Décrire ce qui a changé, pourquoi, ce qui a été vérifié et les limites restantes.
+
+## Signaler l’assistance d’une IA dans les commits
+
+- Tout commit créé ou réalisé avec une contribution substantielle d’un agent d’IA doit identifier cet agent dans son message par souci de transparence. Cela s’applique à ChatGPT Codex, Mistral, Claude et aux autres assistants d’IA.
+- Conserver l’identité Git configurée de l’auteur humain. Ajouter les trailers d’attribution après une ligne vide à la fin du message de commit ; ne pas usurper l’identité de l’humain ni remplacer sa configuration Git.
+- Pour ChatGPT Codex, utiliser `Co-authored-by: ChatGPT Codex <noreply@openai.com>`.
+- Pour Mistral, Claude ou un autre assistant, utiliser un trailer `Co-authored-by: Name <email>` lorsqu’une identité d’attribution a été fournie ou configurée. Sinon, utiliser un trailer explicite `AI-Assisted-By: Mistral` ou `AI-Assisted-By: Claude` plutôt que d’inventer une adresse e-mail.

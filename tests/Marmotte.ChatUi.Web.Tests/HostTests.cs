@@ -27,6 +27,7 @@ public sealed class HostTests
 
     [Theory]
     [InlineData("/app.css", "text/css")]
+    [InlineData("/_content/Marmotte.ChatUi.Components/marmotte-chatui.css", "text/css")]
     [InlineData("/images/marmotte-chatui-mascot.png", "image/png")]
     public async Task Host_serves_its_static_assets(string path, string mediaType)
     {

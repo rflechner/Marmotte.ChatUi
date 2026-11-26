@@ -1,0 +1,16 @@
+<div class="mcui-attachment" data-state="@Attachment.Status.ToString().ToLowerInvariant()">
+    @if (PreviewTemplate is not null)
+    {
+        @PreviewTemplate(Attachment)
+    }
+    <div class="mcui-attachment-details">
+        <strong>@Attachment.FileName</strong>
+        <span>@Attachment.MediaType · @Attachment.SizeBytes.ToString("N0", System.Globalization.CultureInfo.CurrentCulture) bytes</span>
+        <span role="status" aria-live="polite" aria-atomic="true">@StateText</span>
+    </div>
+    @if (OnRemove.HasDelegate)
+    {
+        <button class="mcui-button mcui-secondary" type="button" disabled="@(Disabled || !RendererInfo.IsInteractive)"
+                aria-label="@($"Remove {Attachment.FileName}")" @onclick="RemoveAsync">Remove</button>
+    }
+</div>

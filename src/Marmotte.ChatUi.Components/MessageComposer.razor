@@ -1,0 +1,11 @@
+<form class="mcui-composer" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+    <label for="@_inputId">Message</label>
+    <textarea @ref="_input" id="@_inputId" rows="3" value="@Draft" @oninput="ChangeDraftAsync"
+              readonly="@(Busy || _submitting)" disabled="@(!RendererInfo.IsInteractive || !OnSend.HasDelegate || !DraftChanged.HasDelegate)"
+              aria-describedby="@_helpId" placeholder="Write your message…"></textarea>
+    <div class="mcui-composer-actions">
+        <p id="@_helpId">@HelpText</p>
+        <button class="mcui-button" type="submit" disabled="@(!CanSend)">@(_submitting ? "Sending…" : "Send message")</button>
+    </div>
+    <div role="alert" class="mcui-error">@_error</div>
+</form>

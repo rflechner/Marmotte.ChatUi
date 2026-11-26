@@ -4,7 +4,7 @@
 
 ## Statut et objectif
 
-Ce document distingue le socle M1–M5 implémenté de l’architecture produit cible. Les neuf projets sources, l’hôte Blazor Interactive Server, le domaine et ses cas d’usage autorisés, l’infrastructure locale Aspire et l’adaptateur d’identité OIDC existent désormais. PostgreSQL/pgvector et Keycloak démarrent avec données persistantes et contrôles de disponibilité ; ServiceDefaults fournit les diagnostics. Web authentifie les utilisateurs et protège l’espace de travail et l’endpoint de circuit. M5 compose les cas d’usage métier avec des repositories PostgreSQL lorsqu’une base est configurée, avec migrations et secrets de modèle protégés. M6 ajoute l’adaptateur texte, vérifié avec LM Studio ; les validations Unsloth et vision restent ouvertes. Les composants de chat réutilisables et la publication NuGet restent prévus.
+Ce document distingue le socle M1–M5 implémenté de l’architecture produit cible. Les neuf projets sources, l’hôte Blazor Interactive Server, le domaine et ses cas d’usage autorisés, l’infrastructure locale Aspire et l’adaptateur d’identité OIDC existent désormais. PostgreSQL/pgvector et Keycloak démarrent avec données persistantes et contrôles de disponibilité ; ServiceDefaults fournit les diagnostics. Web authentifie les utilisateurs et protège l’espace de travail et l’endpoint de circuit. M5 compose les cas d’usage métier avec des repositories PostgreSQL lorsqu’une base est configurée, avec migrations et secrets de modèle protégés. M6 ajoute l’adaptateur texte, vérifié avec LM Studio ; les validations Unsloth et vision restent ouvertes. M7 implémente les composants de chat réutilisables avec thèmes et un exemple indépendant ; orchestration complète et publication NuGet relèvent encore de M8/M10.
 
 Marmotte.ChatUi vise deux usages : une application de chat en .NET et Blazor, inspirée d’AnythingLLM et d’Open WebUI, et une bibliothèque de composants et widgets intégrables dans d’autres applications. L’application complète utilisera les mêmes composants que ceux distribués en NuGet.
 
@@ -35,7 +35,7 @@ Les frontières importantes correspondent à des assemblies distinctes. Il s’a
 
 ### Découpage cible
 
-Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Persistence.PostgreSql implémente M5 et Infrastructure.OpenAI implémente l’adaptateur texte M6. Components établit encore la frontière de sa future implémentation. AppHost et ServiceDefaults implémentent l’orchestration et les diagnostics M3. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
+Les neuf projets ci-dessous existent sous `src/`. Le tableau décrit leurs responsabilités prévues. Domain, Contracts et Application implémentent M2. Persistence.PostgreSql implémente M5 et Infrastructure.OpenAI implémente l’adaptateur texte M6. Components implémente l’interface de présentation et le design system sémantique M7. AppHost et ServiceDefaults implémentent l’orchestration et les diagnostics M3. Web référence aussi ServiceDefaults, en plus des dépendances indiquées ci-dessous.
 
 | Projet / assembly | Responsabilité | Dépendances internes principales |
 | --- | --- | --- |
@@ -79,11 +79,9 @@ Consulter la [référence du cœur](docs/core.fr.md) pour les invariants, transi
 
 ## Composants Blazor et distribution NuGet
 
-La bibliothèque est une Razor Class Library destinée à être publiée sur NuGet. Son socle M1 référence uniquement Contracts et les packages de composants Blazor compatibles avec le navigateur. La liste des messages, la zone de saisie, les pièces jointes, les états de génération et le widget de chat composable sont prévus pour M7. Consulter [l’intégration](docs/integration.fr.md) pour le contrat de rendu et les limites actuelles.
+La bibliothèque est une Razor Class Library destinée à NuGet. M7 implémente `ChatWidget`, `ChatTheme`, `MessageList`, `ChatMessage`, `MessageComposer`, `GenerationIndicator` et `AttachmentPreview`, en référençant uniquement Contracts et les packages Blazor compatibles navigateur. L’hôte fournit instantanés, callbacks attendus et templates de confiance ; aucun service applicatif n’est injecté. Le texte du modèle est brut et encodé, les réponses partielles restent visibles et les pièces jointes en attente bloquent l’éditeur textuel. Consulter [l’intégration](docs/integration.fr.md) pour l’API publique, les tokens, le contrat de propriété/annulation et les limites.
 
-Son API repose sur des paramètres, événements, templates et contrats de présentation stables. L’application consommatrice fournit les services de conversation et de pièces jointes dont elle a besoin. Les composants ne nécessitent pas l’application complète et n’imposent pas de base de données, d’identité ou de SDK de modèle.
-
-Les assets et styles réutilisables doivent être distribués avec la bibliothèque lorsque nécessaire. Le branding de l’application Marmotte.ChatUi reste remplaçable par l’hôte du widget. Un projet de démonstration ou un test de consommation vérifiera que le package fonctionne sans dépendance transitive aux adaptateurs serveur.
+L’exemple indépendant `samples/Marmotte.ChatUi.Sample` substitue un service déterministe et démontre Interactive Server, erreurs, annulation et surcharges de thème locales sans adaptateurs serveur. Web utilise le même widget dans son espace protégé, avec envoi désactivé en attendant l’orchestration M8. Le CSS est livré sous le chemin `_content` de la RCL ; les sélecteurs sont limités à `.mcui-theme`. Les surcharges publiques sont héritées sans être réinitialisées par la palette claire/sombre/système. La marque est optionnelle et fournie par l’hôte ; l’exemple inclut une copie inchangée de la mascotte préservée. Les tests de composants et navigateur vérifient le contrat de présentation, ceux d’architecture l’indépendance de l’exemple. La consommation NuGet externe relève encore de M10.
 
 La publication NuGet est un objectif de livraison ultérieur. Aucun nom réservé, version publiée ou pipeline de publication n’est supposé existant.
 
@@ -165,11 +163,11 @@ Le choix de la bibliothèque de rendu PDF, de sa licence et du stockage des rend
 
 ## Design system et identité visuelle
 
-Le design system expose des tokens sémantiques via des propriétés CSS personnalisées : surfaces, textes, accents, bordures, états, focus, espacements, typographie, rayons et ombres. Les composants utilisent ces tokens plutôt que des couleurs codées individuellement.
+Le design system M7 expose des tokens sémantiques via les propriétés CSS personnalisées `--mcui-*` : surfaces, textes, accents, bordures, états, focus, espacements, typographie, rayons et ombres. Les composants utilisent ces tokens plutôt que des couleurs codées individuellement.
 
-Prévoir des thèmes clair, sombre et système, avec préférence explicite de l’utilisateur. Les tokens doivent pouvoir être redéfinis par l’application consommatrice, globalement ou dans le conteneur d’un widget, sans modifier le package ni imposer une feuille de style globale intrusive. Vérifier contraste, clavier, focus et lisibilité dans chaque thème.
+`ChatTheme` et `ChatWidget` implémentent les palettes claire, sombre et système avec callbacks de sélection explicite. Les surcharges publiques héritent de l’application ou d’un conteneur de widget sans modifier le package ni les contrôles non concernés. L’hôte gère la persistance de préférence. Les contrôles navigateur couvrent contraste par défaut, clavier, focus et formats adaptatifs ; les consommateurs doivent revérifier leurs surcharges.
 
-La marque reprend la mascotte turquoise à museau crème et écharpe rouge fournie par l’utilisateur. Une bannière Marmotte.ChatUi sert au README et une version compacte sert à l’application. L’identité du widget reste personnalisable par ses consommateurs. Les mentions MarmotteDB et Experimental Proof of Concept appartiennent aux références d’origine et ne constituent pas le nom du produit.
+La marque reprend la mascotte turquoise à museau crème et écharpe rouge fournie par l’utilisateur. Une bannière Marmotte.ChatUi sert au README et la version compacte préservée est utilisée dans l’application et l’exemple. L’identité du widget reste personnalisable par ses consommateurs. Les mentions MarmotteDB et Experimental Proof of Concept appartiennent aux références d’origine et ne constituent pas le nom du produit.
 
 Les images de référence et leur provenance sont conservées dans [docs/images/README.fr.md](docs/images/README.fr.md). Les assets doivent fonctionner sur fond clair et sombre et conserver leur transparence lorsque présente.
 

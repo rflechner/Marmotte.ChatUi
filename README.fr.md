@@ -13,7 +13,7 @@ Une application de chat en .NET et Blazor, et des composants réutilisables pour
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="La mascotte marmotte avec une pancarte Experimental Proof of Concept" width="320" />
 
-Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas d’usage autorisés, infrastructure locale Aspire, connexion/déconnexion OIDC avec Keycloak et isolation utilisateur. Web fournit un accueil public et un espace protégé. PostgreSQL persiste désormais historique, paramètres, métadonnées de pièces jointes et secrets de modèle protégés, via EF Core en code first et migrations au démarrage. L’adaptateur texte M6 est implémenté et testé avec LM Studio ; les validations Unsloth et vision restent ouvertes. Les composants de chat réutilisables restent pour les milestones suivants. Aucun package NuGet n’est publié.
+Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas d’usage autorisés, infrastructure locale Aspire, connexion/déconnexion OIDC avec Keycloak et isolation utilisateur. Web fournit un accueil public et un espace protégé. PostgreSQL persiste désormais historique, paramètres, métadonnées de pièces jointes et secrets de modèle protégés, via EF Core en code first et migrations au démarrage. L’adaptateur texte M6 est implémenté et testé avec LM Studio ; les validations Unsloth et vision restent ouvertes. M7 ajoute les composants de chat réutilisables, les tokens sémantiques, les thèmes clair/sombre/système et un exemple interactif indépendant. L’intégration complète modèle/historique suit en M8. Aucun package NuGet n’est publié.
 
 ## Direction du produit
 
@@ -32,6 +32,7 @@ Les milestones 1 à 5 sont implémentés : socle .NET 10/Blazor, domaine et cas 
 - [Modèle métier, ports et cas d’usage](docs/core.fr.md)
 - [PostgreSQL, migrations et clés de protection](docs/persistence.fr.md)
 - [Adaptateur de modèles, configuration et compatibilité](docs/models.fr.md)
+- [Composants réutilisables, exemple et tokens de thème](docs/integration.fr.md)
 - [Consignes de contribution](AGENTS.fr.md)
 - [Mascotte et provenance des images](docs/images/README.fr.md)
 
@@ -50,6 +51,14 @@ dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 ```
 
 Ouvrir [l’hôte local](http://localhost:5180). La page affiche l’état du projet et la mascotte ; elle ne propose pas encore de chat. L’arrêter avec Ctrl+C.
+
+Essayer le studio de composants indépendant, avec streaming simulé et sans services externes :
+
+```sh
+dotnet run --project samples/Marmotte.ChatUi.Sample --configuration Release --no-build
+```
+
+Ouvrir [l’exemple](http://127.0.0.1:5190). Il démontre sélection de thème, personnalisation, annulation, erreurs et métadonnées de pièces jointes.
 
 Pour démarrer l’infrastructure et la connexion OIDC avec Docker actif :
 

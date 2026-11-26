@@ -1,0 +1,11 @@
+{
+  "name": "marmotte-chatui-browser-tests",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": { "test": "playwright test" },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.1",
+    "@playwright/test": "1.62.1"
+  }
+}

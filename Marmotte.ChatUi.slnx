@@ -27,6 +27,9 @@
     <File Path="docs\persistence.fr.md" />
     <File Path="docs\persistence.md" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Marmotte.ChatUi.Sample/Marmotte.ChatUi.Sample.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Marmotte.ChatUi.Domain/Marmotte.ChatUi.Domain.csproj" />
     <Project Path="src/Marmotte.ChatUi.Contracts/Marmotte.ChatUi.Contracts.csproj" />
@@ -40,6 +43,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Marmotte.ChatUi.OpenAI.Tests/Marmotte.ChatUi.OpenAI.Tests.csproj" />
+    <Project Path="tests/Marmotte.ChatUi.Components.Tests/Marmotte.ChatUi.Components.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Core.Tests/Marmotte.ChatUi.Core.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Architecture.Tests/Marmotte.ChatUi.Architecture.Tests.csproj" />
     <Project Path="tests/Marmotte.ChatUi.Web.Tests/Marmotte.ChatUi.Web.Tests.csproj" />

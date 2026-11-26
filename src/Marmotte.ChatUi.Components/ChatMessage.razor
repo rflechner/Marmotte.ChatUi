@@ -1,0 +1,22 @@
+<article class="mcui-message" data-role="@Message.Role.ToString().ToLowerInvariant()" aria-label="@Speaker">
+    <header class="mcui-message-header">
+        <strong>@Speaker</strong>
+        <time datetime="@Message.CreatedAt.ToString("O")">@Message.CreatedAt.UtcDateTime.ToString("HH:mm", System.Globalization.CultureInfo.CurrentCulture) UTC</time>
+    </header>
+    @if (ContentTemplate is not null)
+    {
+        @ContentTemplate(Message)
+    }
+    else
+    {
+        <div class="mcui-message-content" dir="auto">@Message.Content</div>
+    }
+    @foreach (var attachment in Message.Attachments)
+    {
+        <AttachmentPreview @key="attachment.Id" Attachment="attachment" PreviewTemplate="AttachmentTemplate" />
+    }
+    @if (Message.Role == ChatRole.Assistant && Message.Status != GenerationStatus.Completed)
+    {
+        <p class="mcui-message-note">@MessageState</p>
+    }
+</article>

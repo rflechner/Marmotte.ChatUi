@@ -1,0 +1,7 @@
+<div class="mcui-status" data-state="@StateName">
+    <p role="status" aria-live="polite" aria-atomic="true">@StatusText</p>
+    @if (Error is not null)
+    {
+        <p class="mcui-error" role="alert">@ErrorText</p>
+    }
+</div>

@@ -13,7 +13,7 @@ A .NET and Blazor chat application, with reusable components for embedding conve
 
 <img src="docs/images/references/experimental-proof-of-concept.png" alt="The marmot mascot holding an Experimental Proof of Concept sign" width="320" />
 
-Milestones 1 through 5 are implemented: .NET 10/Blazor foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC sign-in/sign-out with Keycloak and user isolation. Web provides a public landing page and a protected workspace. PostgreSQL now persists history, settings, attachment metadata, and protected model credentials, using EF Core code first and startup migrations. The M6 text model adapter is implemented and tested against LM Studio; Unsloth and vision validation remain open. Reusable chat components remain for later milestones. No NuGet package has been published.
+Milestones 1 through 5 are implemented: .NET 10/Blazor foundations, the domain and authorized use cases, local Aspire infrastructure, and OIDC sign-in/sign-out with Keycloak and user isolation. Web provides a public landing page and a protected workspace. PostgreSQL now persists history, settings, attachment metadata, and protected model credentials, using EF Core code first and startup migrations. The M6 text model adapter is implemented and tested against LM Studio; Unsloth and vision validation remain open. M7 adds reusable chat components, semantic tokens, light/dark/system themes, and an independent interactive sample. Full model/history integration follows in M8. No NuGet package has been published.
 
 ## Product direction
 
@@ -32,6 +32,7 @@ Milestones 1 through 5 are implemented: .NET 10/Blazor foundations, the domain a
 - [Domain model, ports, and use cases](docs/core.md)
 - [PostgreSQL, migrations, and credential keys](docs/persistence.md)
 - [Model adapter, configuration, and compatibility](docs/models.md)
+- [Reusable components, sample, and theme tokens](docs/integration.md)
 - [Contribution guidelines](AGENTS.md)
 - [Mascot and image provenance](docs/images/README.md)
 
@@ -50,6 +51,14 @@ dotnet run --project src/Marmotte.ChatUi.Web --configuration Release --no-build
 ```
 
 Open [the local host](http://localhost:5180). The page displays the project status and mascot; it does not yet provide chat. Stop it with Ctrl+C.
+
+Try the independent component studio, with simulated streaming and no external services:
+
+```sh
+dotnet run --project samples/Marmotte.ChatUi.Sample --configuration Release --no-build
+```
+
+Open [the sample](http://127.0.0.1:5190). It demonstrates theme selection, customization, cancellation, errors, and attachment metadata.
 
 To start the infrastructure and OIDC sign-in with Docker running:
 
